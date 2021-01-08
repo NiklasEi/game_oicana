@@ -1,0 +1,140 @@
+name: release-flow
+
+# https://help.github.com/en/articles/events-that-trigger-workflows#release-event-release
+# on: release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  build-macOS:
+    runs-on: macOS-latest
+
+    steps:
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build and release
+        run: |
+          cargo build --release --features native
+          mkdir -p mini_jam_71.app/Contents/MacOS
+          cp -r assets/ mini_jam_71.app/Contents/MacOS/
+          cp target/release/mini_jam_71 mini_jam_71.app/Contents/MacOS/
+          strip mini_jam_71.app/Contents/MacOS/mini_jam_71
+          hdiutil create -fs HFS+ -volname "mini_jam_71" -srcfolder mini_jam_71.app mini_jam_71.dmg
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: mini_jam_71.dmg
+          asset_name: mini_jam_71_macOS_${{ steps.get_version.outputs.version }}.dmg
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install Dependencies
+        run: sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+      - name: Build and release
+        run: |
+          cargo build --release --features native
+          strip target/release/mini_jam_71
+      - name: Prepare assets
+        run: |
+          mkdir target/release/assets && cp -r assets target/release/assets
+      - uses: papeloto/action-zip@v1
+        with:
+          files: target/release/assets/ target/release/mini_jam_71
+          dest: mini_jam_71_linux.zip
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: mini_jam_71_linux.zip
+          asset_name: mini_jam_71_linux_${{ steps.get_version.outputs.version }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Get the version
+        id: get_version
+        run: echo "::set-output name=version::${GITHUB_REF#refs/tags/}"
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build and release
+        run: |
+          cargo build --release --features native
+      - name: Prepare assets
+        run: |
+          mkdir target/release/assets && cp -r assets target/release/assets
+      - uses: papeloto/action-zip@v1
+        with:
+          files: target/release/assets/ target/release/mini_jam_71.exe
+          dest: mini_jam_71_windows.zip
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: mini_jam_71_windows.zip
+          asset_name: mini_jam_71_windows_${{ steps.get_version.outputs.version }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install Dependencies
+        run: sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+      - name: Install cargo-make
+        run: |
+          cargo install cargo-make
+      - name: Add wasm target
+        run: |
+          rustup target add wasm32-unknown-unknown
+      - name: Build Release
+        run: |
+          cargo make release-web
+      - uses: papeloto/action-zip@v1
+        with:
+          files: mini_jam_71_web
+          dest: mini_jam_71_web.zip
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: mini_jam_71_web.zip
+          asset_name: mini_jam_71_web_${{ steps.get_version.outputs.version }}.zip
+          tag: ${{ github.ref }}
+          overwrite: true

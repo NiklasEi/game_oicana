@@ -1,0 +1,26 @@
+use bevy::prelude::*;
+use game_plugin::GamePlugin;
+
+#[cfg(target_arch = "wasm32")]
+use bevy_webgl2;
+
+#[cfg(debug_assertions)]
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin};
+
+#[bevy_main]
+fn main() {
+    let mut app = App::build();
+    app.add_resource(Msaa { samples: 4 })
+        .add_plugin(GamePlugin)
+        .add_plugins(DefaultPlugins);
+
+    #[cfg(target_arch = "wasm32")]
+        app.add_plugin(bevy_webgl2::WebGL2Plugin);
+
+    #[cfg(debug_assertions)]
+        app.add_plugin(FrameTimeDiagnosticsPlugin::default());
+    #[cfg(debug_assertions)]
+        app.add_plugin(PrintDiagnosticsPlugin::default());
+
+    app.run();
+}
