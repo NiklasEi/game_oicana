@@ -11,16 +11,21 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin};
 fn main() {
     let mut app = App::build();
     app.add_resource(Msaa { samples: 4 })
-        .add_plugin(GamePlugin)
+        .add_resource(WindowDescriptor {
+            width: 800.,
+            height: 600.,
+            title: "TD with puzzles".to_string(),
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins);
 
     #[cfg(target_arch = "wasm32")]
-        app.add_plugin(bevy_webgl2::WebGL2Plugin);
+    app.add_plugin(bevy_webgl2::WebGL2Plugin);
 
-    #[cfg(debug_assertions)]
-        app.add_plugin(FrameTimeDiagnosticsPlugin::default());
-    #[cfg(debug_assertions)]
-        app.add_plugin(PrintDiagnosticsPlugin::default());
+    // #[cfg(debug_assertions)]
+    //     app.add_plugin(FrameTimeDiagnosticsPlugin::default());
+    // #[cfg(debug_assertions)]
+    //     app.add_plugin(PrintDiagnosticsPlugin::default());
 
-    app.run();
+    app.add_plugin(GamePlugin).run();
 }
