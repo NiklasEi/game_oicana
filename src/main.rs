@@ -4,8 +4,8 @@ use game_plugin::GamePlugin;
 #[cfg(target_arch = "wasm32")]
 use bevy_webgl2;
 
-#[cfg(debug_assertions)]
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin};
+// #[cfg(debug_assertions)]
+// use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin};
 
 #[bevy_main]
 fn main() {

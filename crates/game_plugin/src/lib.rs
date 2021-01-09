@@ -1,6 +1,9 @@
+mod enemies;
 mod map;
 
+use crate::enemies::EnemiesPlugin;
 use crate::map::MapPlugin;
+
 use bevy::prelude::*;
 
 pub struct GamePlugin;
@@ -8,6 +11,7 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(ClearColor(Color::ALICE_BLUE))
-            .add_plugin(MapPlugin);
+            .add_plugin(MapPlugin)
+            .add_plugin(EnemiesPlugin);
     }
 }
