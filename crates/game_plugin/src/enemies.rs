@@ -23,11 +23,27 @@ struct WaveState {
     pub last_spawn: Instant,
 }
 
+struct Tamable;
+
 pub struct Enemy {
     current_waypoint_index: usize,
     form: EnemyForm,
     color: EnemyColor,
     pub health: i32,
+    pub max_health: i32,
+}
+
+impl Enemy {
+    pub fn get_color_handle(
+        &self,
+        mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    ) -> Handle<ColorMaterial> {
+        let health_factor = self.health as f32 / self.max_health as f32;
+        let full_color =
+            Color::GRAY * health_factor * 2. + self.color.to_color() * (1. - health_factor);
+
+        materials.add(full_color.into())
+    }
 }
 
 enum EnemyForm {
@@ -67,8 +83,15 @@ impl EnemyColor {
         mut materials: &mut ResMut<Assets<ColorMaterial>>,
     ) -> Handle<ColorMaterial> {
         match self {
-            EnemyColor::Blue => materials.add(Color::rgb(0.1, 0.4, 0.5).into()),
-            EnemyColor::Red => materials.add(Color::rgb(0.8, 0.0, 0.0).into()),
+            EnemyColor::Blue => materials.add(Color::BLUE.into()),
+            EnemyColor::Red => materials.add(Color::RED.into()),
+        }
+    }
+
+    pub fn to_color(&self) -> Color {
+        match self {
+            EnemyColor::Blue => Color::BLUE,
+            EnemyColor::Red => Color::RED,
         }
     }
 }
@@ -119,19 +142,21 @@ fn create_circle_enemy(
     let mut builder = PathBuilder::new();
     builder.arc(point(0.000001, 0.000001), 10., 10., 2. * PI, 0.1);
     let path = builder.build();
+    let enemy = Enemy {
+        current_waypoint_index: 0,
+        form: EnemyForm::Circle,
+        health: 100,
+        max_health: 100,
+        color,
+    };
     commands
         .spawn(path.fill(
-            color.clone().get_color_material_handle(&mut materials),
+            enemy.get_color_handle(materials),
             meshes,
             Vec3::new(map.spawn.x, map.spawn.y, 0.),
             &FillOptions::default(),
         ))
-        .with(Enemy {
-            current_waypoint_index: 0,
-            form: EnemyForm::Circle,
-            health: 100,
-            color,
-        });
+        .with(enemy);
 }
 
 fn create_triangle_enemy(
@@ -147,19 +172,21 @@ fn create_triangle_enemy(
     builder.line_to(point(10., 0.));
     builder.line_to(point(-5., 9.));
     let path = builder.build();
+    let enemy = Enemy {
+        health: 100,
+        max_health: 100,
+        current_waypoint_index: 0,
+        form: EnemyForm::Triangle,
+        color,
+    };
     commands
         .spawn(path.fill(
-            color.clone().get_color_material_handle(&mut materials),
+            enemy.get_color_handle(&mut materials),
             meshes,
             Vec3::new(map.spawn.x, map.spawn.y, 0.),
             &FillOptions::default(),
         ))
-        .with(Enemy {
-            health: 100,
-            current_waypoint_index: 0,
-            form: EnemyForm::Triangle,
-            color,
-        });
+        .with(enemy);
 }
 
 fn create_quadratic_enemy(
@@ -176,19 +203,21 @@ fn create_quadratic_enemy(
     builder.line_to(point(9., 9.));
     builder.line_to(point(-9., 9.));
     let path = builder.build();
+    let enemy = Enemy {
+        max_health: 500,
+        health: 500,
+        current_waypoint_index: 0,
+        form: EnemyForm::Quadratic,
+        color,
+    };
     commands
         .spawn(path.fill(
-            color.clone().get_color_material_handle(&mut materials),
+            enemy.get_color_handle(&mut materials),
             meshes,
             Vec3::new(map.spawn.x, map.spawn.y, 0.),
             &FillOptions::default(),
         ))
-        .with(Enemy {
-            health: 500,
-            current_waypoint_index: 0,
-            form: EnemyForm::Quadratic,
-            color,
-        });
+        .with(enemy);
 }
 
 fn remove_enemies(
@@ -212,14 +241,16 @@ fn remove_enemies(
 fn update_enemies(
     time: Res<Time>,
     map: Res<Map>,
-    mut enemy_query: Query<(&mut Enemy, &mut Transform)>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut enemy_query: Query<(&mut Enemy, &mut Transform, &mut Handle<ColorMaterial>)>,
 ) {
     let delta = time.delta().as_millis() as f32;
     let speed = 0.1;
-    for (mut enemy, mut transform) in enemy_query.iter_mut() {
+    for (mut enemy, mut transform, mut color) in enemy_query.iter_mut() {
         if enemy.current_waypoint_index >= map.waypoints.len() {
             continue;
         }
+        *color = enemy.get_color_handle(&mut materials);
         let destination = map.waypoints.get(enemy.current_waypoint_index).unwrap();
         let distance = Vec3::new(destination.x, destination.y, 0.) - transform.translation;
         if distance == Vec3::zero() {

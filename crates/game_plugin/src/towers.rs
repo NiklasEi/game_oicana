@@ -29,29 +29,35 @@ fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
         .iter()
         .position(|tile| tile == &Tile::Tower)
         .unwrap();
-    commands.spawn((
-        Tower {
-            range: 200.,
-            damage: 1,
-        },
-        Transform::from_translation(Vec3::new(
-            position_column as f32 * map.tile_size,
-            position_row as f32 * map.tile_size,
-            0.,
-        )),
-    ));
+    commands
+        .spawn((
+            Tower {
+                range: 100.,
+                damage: 10,
+            },
+            Transform::from_translation(Vec3::new(
+                position_column as f32 * map.tile_size,
+                position_row as f32 * map.tile_size,
+                0.,
+            )),
+        ))
+        .with(Timer::from_seconds(0.3, true));
 }
 
 fn shoot(
-    tower_query: Query<(&Transform, &Tower)>,
+    time: Res<Time>,
+    mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
     mut enemies_query: Query<(&Transform, &mut Enemy)>,
 ) {
-    for (tower_pos, tower) in tower_query.iter() {
-        'enemies: for (enemy_pos, mut enemy) in enemies_query.iter_mut() {
-            let distance = enemy_pos.translation - tower_pos.translation;
-            if distance.length() < tower.range {
-                enemy.health -= tower.damage;
-                break 'enemies;
+    for (tower_pos, tower, mut timer) in tower_query.iter_mut() {
+        timer.tick(time.delta_seconds());
+        if timer.just_finished() {
+            'enemies: for (enemy_pos, mut enemy) in enemies_query.iter_mut() {
+                let distance = enemy_pos.translation - tower_pos.translation;
+                if distance.length() < tower.range {
+                    enemy.health -= tower.damage;
+                    break 'enemies;
+                }
             }
         }
     }
