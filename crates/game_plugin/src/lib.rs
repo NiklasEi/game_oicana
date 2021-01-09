@@ -2,11 +2,13 @@ mod bullets;
 mod enemies;
 mod map;
 mod towers;
+mod ui;
 
 use crate::bullets::BulletPlugin;
 use crate::enemies::EnemiesPlugin;
 use crate::map::MapPlugin;
 use crate::towers::TowersPlugin;
+use crate::ui::UiPlugin;
 
 use bevy::prelude::*;
 
@@ -18,6 +20,7 @@ impl Plugin for GamePlugin {
             .add_plugin(MapPlugin)
             .add_plugin(EnemiesPlugin)
             .add_plugin(TowersPlugin)
-            .add_plugin(BulletPlugin);
+            .add_plugin(BulletPlugin)
+            .add_plugin(UiPlugin);
     }
 }

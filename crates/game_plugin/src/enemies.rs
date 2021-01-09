@@ -1,4 +1,5 @@
 use crate::map::{Coordinate, Map, Tile};
+use crate::ui::Health;
 use bevy::prelude::*;
 use bevy::utils::Instant;
 use bevy_prototype_lyon::prelude::*;
@@ -232,6 +233,7 @@ fn create_quadratic_enemy(
 fn remove_enemies(
     commands: &mut Commands,
     map: Res<Map>,
+    mut health: ResMut<Health>,
     mut enemy_query: Query<(Entity, &Enemy)>,
 ) {
     for (entity, enemy) in enemy_query.iter() {
@@ -240,7 +242,7 @@ fn remove_enemies(
             continue;
         }
         if enemy.current_waypoint_index >= map.waypoints.len() {
-            println!("enemy reached the castle");
+            health.health -= 1;
             commands.despawn(entity);
             continue;
         }
