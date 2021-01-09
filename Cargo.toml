@@ -1,6 +1,6 @@
 [package]
 name = "mini_jam_71"
-version = "0.2.0"
+version = "0.2.1-dev"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"
 publish = false
