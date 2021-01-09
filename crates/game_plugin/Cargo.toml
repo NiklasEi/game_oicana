@@ -19,3 +19,5 @@ native = [
 
 [dependencies]
 bevy = {version="0.4.0", default-features=false}
+bevy_prototype_lyon = "0.1.5"
+rand = "0.8.1"
