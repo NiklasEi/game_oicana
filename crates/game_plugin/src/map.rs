@@ -16,6 +16,7 @@ pub enum Tile {
     TowerPlot,
     Tower,
     Castle,
+    Empty,
 }
 
 #[derive(Default)]
@@ -44,15 +45,14 @@ pub struct Map {
 impl Map {
     pub fn load_map() -> Self {
         const MAP_STR: &str = "\
-            ..........\n\
-            .......###\n\
-            ...#......\n\
-            a+++.++++q\n\
-            ...+.+....\n\
-            .+++.++...\n\
-            .+....+++.\n\
-            .+++....+.\n\
-            ...++++++.";
+            ##########\n\
+            #...######\n\
+            a+++0++++q\n\
+            ###+#+####\n\
+            #+++#++###\n\
+            #+####+++#\n\
+            #+++#.##+#\n\
+            ###++++++#";
 
         let mut map = Map {
             height: 0,
@@ -73,8 +73,9 @@ impl Map {
             let mut row = vec![];
             for (column_index, char) in line.chars().enumerate() {
                 match char {
+                    '0' => row.push(Tile::Tower),
                     '.' => row.push(Tile::TowerPlot),
-                    '#' => row.push(Tile::Tower),
+                    '#' => row.push(Tile::Empty),
                     '+' => {
                         preliminary_waypoints.push(Point {
                             x: column_index,
@@ -164,6 +165,7 @@ fn render_map(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    let blank_handle: Handle<Texture> = asset_server.load("blank64x64.png");
     let tower_plot_handle: Handle<Texture> = asset_server.load("towerplot64x64.png");
     let tower_handle: Handle<Texture> = asset_server.load("tower64x64.png");
     let path_handle: Handle<Texture> = asset_server.load("path64x64.png");
@@ -173,6 +175,17 @@ fn render_map(
         for column in 0..map.width {
             let tile = &map.tiles[row][column];
             match tile {
+                &Tile::Empty => {
+                    commands.spawn(SpriteBundle {
+                        material: materials.add(blank_handle.clone().into()),
+                        transform: Transform::from_translation(Vec3::new(
+                            column as f32 * map.tile_size,
+                            row as f32 * map.tile_size,
+                            0.,
+                        )),
+                        ..Default::default()
+                    });
+                }
                 &Tile::TowerPlot => {
                     commands.spawn(SpriteBundle {
                         material: materials.add(tower_plot_handle.clone().into()),
