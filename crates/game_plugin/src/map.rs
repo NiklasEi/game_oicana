@@ -10,7 +10,7 @@ impl Plugin for MapPlugin {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Tile {
     Path,
     TowerPlot,
@@ -134,7 +134,6 @@ impl Map {
                     x: sink.x as f32 * self.tile_size,
                     y: sink.y as f32 * self.tile_size,
                 });
-                println!("{:?}", self);
                 return;
             }
             let next_point_position = next_point_position.unwrap();

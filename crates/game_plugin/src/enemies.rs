@@ -13,6 +13,7 @@ impl Plugin for EnemiesPlugin {
         app.add_resource(WaveState {
             last_spawn: Instant::now(),
         })
+        .add_system(remove_enemies.system())
         .add_system(spawn_enemies.system())
         .add_system(update_enemies.system());
     }
@@ -22,10 +23,11 @@ struct WaveState {
     pub last_spawn: Instant,
 }
 
-struct Enemy {
+pub struct Enemy {
     current_waypoint_index: usize,
     form: EnemyForm,
     color: EnemyColor,
+    pub health: i32,
 }
 
 enum EnemyForm {
@@ -127,6 +129,7 @@ fn create_circle_enemy(
         .with(Enemy {
             current_waypoint_index: 0,
             form: EnemyForm::Circle,
+            health: 100,
             color,
         });
 }
@@ -152,6 +155,7 @@ fn create_triangle_enemy(
             &FillOptions::default(),
         ))
         .with(Enemy {
+            health: 100,
             current_waypoint_index: 0,
             form: EnemyForm::Triangle,
             color,
@@ -180,10 +184,29 @@ fn create_quadratic_enemy(
             &FillOptions::default(),
         ))
         .with(Enemy {
+            health: 500,
             current_waypoint_index: 0,
             form: EnemyForm::Quadratic,
             color,
         });
+}
+
+fn remove_enemies(
+    commands: &mut Commands,
+    map: Res<Map>,
+    mut enemy_query: Query<(Entity, &Enemy)>,
+) {
+    for (entity, enemy) in enemy_query.iter() {
+        if enemy.health < 0 {
+            commands.despawn(entity);
+            continue;
+        }
+        if enemy.current_waypoint_index >= map.waypoints.len() {
+            println!("enemy reached the castle");
+            commands.despawn(entity);
+            continue;
+        }
+    }
 }
 
 fn update_enemies(
