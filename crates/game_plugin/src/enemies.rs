@@ -23,12 +23,13 @@ struct WaveState {
     pub last_spawn: Instant,
 }
 
-struct Tamable;
+pub struct Tameable;
 
 pub struct Enemy {
     current_waypoint_index: usize,
     form: EnemyForm,
     color: EnemyColor,
+    pub travelled: f32,
     pub health: i32,
     pub max_health: i32,
 }
@@ -148,6 +149,7 @@ fn create_circle_enemy(
         health: 100,
         max_health: 100,
         color,
+        travelled: 0.,
     };
     commands
         .spawn(path.fill(
@@ -178,6 +180,7 @@ fn create_triangle_enemy(
         current_waypoint_index: 0,
         form: EnemyForm::Triangle,
         color,
+        travelled: 0.,
     };
     commands
         .spawn(path.fill(
@@ -209,6 +212,7 @@ fn create_quadratic_enemy(
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
         color,
+        travelled: 0.,
     };
     commands
         .spawn(path.fill(
@@ -260,8 +264,10 @@ fn update_enemies(
         let movement = distance.normalize() * delta * speed;
         if movement.length() > distance.length() {
             transform.translation = Vec3::new(destination.x, destination.y, 0.);
+            enemy.travelled += distance.length();
             enemy.current_waypoint_index += 1;
         } else {
+            enemy.travelled += movement.length();
             transform.translation += movement;
         }
     }

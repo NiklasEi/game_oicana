@@ -1,5 +1,6 @@
+use crate::bullets::{spawn_bullet, Bullet};
 use crate::enemies::Enemy;
-use crate::map::{Map, Tile};
+use crate::map::{Coordinate, Map, Tile};
 use bevy::prelude::*;
 
 pub struct TowersPlugin;
@@ -17,47 +18,74 @@ struct Tower {
 }
 
 fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
-    let position_row = map
-        .tiles
-        .iter()
-        .position(|row| row.contains(&Tile::Tower))
-        .unwrap();
-    let position_column = map
-        .tiles
-        .get(position_row)
-        .unwrap()
-        .iter()
-        .position(|tile| tile == &Tile::Tower)
-        .unwrap();
-    commands
-        .spawn((
-            Tower {
-                range: 100.,
-                damage: 10,
-            },
-            Transform::from_translation(Vec3::new(
-                position_column as f32 * map.tile_size,
-                position_row as f32 * map.tile_size,
-                0.,
-            )),
-        ))
-        .with(Timer::from_seconds(0.3, true));
+    let mut tower_positions: Vec<Coordinate> = vec![];
+
+    for (row_index, row) in map.tiles.iter().enumerate() {
+        for (column_index, tile) in row.iter().enumerate() {
+            if tile == &Tile::Tower {
+                tower_positions.push(Coordinate {
+                    x: column_index as f32 * map.tile_size,
+                    y: row_index as f32 * map.tile_size,
+                })
+            }
+        }
+    }
+
+    for coordinate in tower_positions {
+        commands
+            .spawn((
+                Tower {
+                    range: 100.,
+                    damage: 15,
+                },
+                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+            ))
+            .with(Timer::from_seconds(0.3, true));
+    }
 }
 
 fn shoot(
+    commands: &mut Commands,
     time: Res<Time>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
     mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
-    mut enemies_query: Query<(&Transform, &mut Enemy)>,
+    mut enemies_query: Query<(Entity, &Transform, &mut Enemy)>,
 ) {
     for (tower_pos, tower, mut timer) in tower_query.iter_mut() {
         timer.tick(time.delta_seconds());
         if timer.just_finished() {
-            'enemies: for (enemy_pos, mut enemy) in enemies_query.iter_mut() {
-                let distance = enemy_pos.translation - tower_pos.translation;
-                if distance.length() < tower.range {
-                    enemy.health -= tower.damage;
-                    break 'enemies;
-                }
+            let furthest_target: Option<(Entity, f32)> = enemies_query
+                .iter_mut()
+                .filter(|(_, pos, _)| {
+                    let distance = pos.translation - tower_pos.translation;
+                    distance.length() < tower.range
+                })
+                .fold(None, |acc, (entity, pos, enemy)| {
+                    if let Some((_, old_travelled)) = acc {
+                        if enemy.travelled > old_travelled {
+                            Some((entity.clone(), enemy.travelled))
+                        } else {
+                            acc
+                        }
+                    } else {
+                        Some((entity.clone(), enemy.travelled))
+                    }
+                });
+
+            if let Some((target, _)) = furthest_target {
+                let bullet = Bullet {
+                    damage: tower.damage,
+                    speed: 200.,
+                    target,
+                };
+                spawn_bullet(
+                    commands,
+                    bullet,
+                    tower_pos.translation,
+                    &mut materials,
+                    &mut meshes,
+                );
             }
         }
     }
