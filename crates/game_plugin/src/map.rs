@@ -1,21 +1,25 @@
+use crate::enemies::Trees;
 use bevy::prelude::*;
 
 pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(Map::load_map())
+        let map = Map::load_map();
+        app.add_resource(map.gather_trees())
+            .add_resource(map)
             .add_startup_system(render_map.system())
             .add_startup_system(setup_camera.system());
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Tile {
     Path,
     TowerPlot,
     Tower,
     Castle,
+    Tree,
     Empty,
 }
 
@@ -25,7 +29,7 @@ struct Point {
     pub y: usize,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Coordinate {
     pub x: f32,
     pub y: f32,
@@ -42,19 +46,25 @@ pub struct Map {
     pub waypoints: Vec<Coordinate>,
 }
 
+pub struct MapTile {
+    pub column: usize,
+    pub row: usize,
+    pub tile: Tile,
+}
+
 impl Map {
     pub fn load_map() -> Self {
         const MAP_STR: &str = "\
-            #############\n\
-            #############\n\
+            ###ttt#######\n\
+            ########t####\n\
             ###...#######\n\
             ##a+++0++++q#\n\
             #####+#+#####\n\
-            ###+++#++####\n\
+            #t#+++#++##t#\n\
             ###+0###+++##\n\
             ###+++#.#0+##\n\
             #####++++++##\n\
-            #############\n\
+            ##t#####t####\n\
             #############";
 
         let mut map = Map {
@@ -79,6 +89,7 @@ impl Map {
                     '0' => row.push(Tile::Tower),
                     '.' => row.push(Tile::TowerPlot),
                     '#' => row.push(Tile::Empty),
+                    't' => row.push(Tile::Tree),
                     '+' => {
                         preliminary_waypoints.push(Point {
                             x: column_index,
@@ -148,6 +159,24 @@ impl Map {
             last_point = next_point;
         }
     }
+
+    fn gather_trees(&self) -> Trees {
+        let mut tree_positions: Vec<Coordinate> = vec![];
+        for (row_index, row) in self.tiles.iter().enumerate() {
+            for (column_index, tile) in row.iter().enumerate() {
+                if tile == &Tile::Tree {
+                    tree_positions.push(Coordinate {
+                        x: column_index as f32 * self.tile_size,
+                        y: row_index as f32 * self.tile_size,
+                    })
+                }
+            }
+        }
+
+        Trees {
+            coordinates: tree_positions,
+        }
+    }
 }
 
 fn setup_camera(commands: &mut Commands, map: Res<Map>) {
@@ -172,65 +201,113 @@ fn render_map(
     let tower_handle: Handle<Texture> = asset_server.load("tower64x64.png");
     let path_handle: Handle<Texture> = asset_server.load("path64x64.png");
     let castle_handle: Handle<Texture> = asset_server.load("castle64x64.png");
+    let tree_handle: Handle<Texture> = asset_server.load("tree64x64.png");
 
     for row in 0..map.height {
         for column in 0..map.width {
             let tile = &map.tiles[row][column];
             match tile {
                 &Tile::Empty => {
-                    commands.spawn(SpriteBundle {
-                        material: materials.add(blank_handle.clone().into()),
-                        transform: Transform::from_translation(Vec3::new(
-                            column as f32 * map.tile_size,
-                            row as f32 * map.tile_size,
-                            0.,
-                        )),
-                        ..Default::default()
-                    });
+                    commands
+                        .spawn(SpriteBundle {
+                            material: materials.add(blank_handle.clone().into()),
+                            transform: Transform::from_translation(Vec3::new(
+                                column as f32 * map.tile_size,
+                                row as f32 * map.tile_size,
+                                0.,
+                            )),
+                            ..Default::default()
+                        })
+                        .with(MapTile {
+                            column,
+                            row,
+                            tile: tile.clone(),
+                        });
                 }
                 &Tile::TowerPlot => {
-                    commands.spawn(SpriteBundle {
-                        material: materials.add(tower_plot_handle.clone().into()),
-                        transform: Transform::from_translation(Vec3::new(
-                            column as f32 * map.tile_size,
-                            row as f32 * map.tile_size,
-                            0.,
-                        )),
-                        ..Default::default()
-                    });
+                    commands
+                        .spawn(SpriteBundle {
+                            material: materials.add(tower_plot_handle.clone().into()),
+                            transform: Transform::from_translation(Vec3::new(
+                                column as f32 * map.tile_size,
+                                row as f32 * map.tile_size,
+                                0.,
+                            )),
+                            ..Default::default()
+                        })
+                        .with(MapTile {
+                            column,
+                            row,
+                            tile: tile.clone(),
+                        });
                 }
                 &Tile::Tower => {
-                    commands.spawn(SpriteBundle {
-                        material: materials.add(tower_handle.clone().into()),
-                        transform: Transform::from_translation(Vec3::new(
-                            column as f32 * map.tile_size,
-                            row as f32 * map.tile_size,
-                            0.,
-                        )),
-                        ..Default::default()
-                    });
+                    commands
+                        .spawn(SpriteBundle {
+                            material: materials.add(tower_handle.clone().into()),
+                            transform: Transform::from_translation(Vec3::new(
+                                column as f32 * map.tile_size,
+                                row as f32 * map.tile_size,
+                                0.,
+                            )),
+                            ..Default::default()
+                        })
+                        .with(MapTile {
+                            column,
+                            row,
+                            tile: tile.clone(),
+                        });
                 }
                 &Tile::Path => {
-                    commands.spawn(SpriteBundle {
-                        material: materials.add(path_handle.clone().into()),
-                        transform: Transform::from_translation(Vec3::new(
-                            column as f32 * map.tile_size,
-                            row as f32 * map.tile_size,
-                            0.,
-                        )),
-                        ..Default::default()
-                    });
+                    commands
+                        .spawn(SpriteBundle {
+                            material: materials.add(path_handle.clone().into()),
+                            transform: Transform::from_translation(Vec3::new(
+                                column as f32 * map.tile_size,
+                                row as f32 * map.tile_size,
+                                0.,
+                            )),
+                            ..Default::default()
+                        })
+                        .with(MapTile {
+                            column,
+                            row,
+                            tile: tile.clone(),
+                        });
                 }
                 &Tile::Castle => {
-                    commands.spawn(SpriteBundle {
-                        material: materials.add(castle_handle.clone().into()),
-                        transform: Transform::from_translation(Vec3::new(
-                            column as f32 * map.tile_size,
-                            row as f32 * map.tile_size,
-                            0.,
-                        )),
-                        ..Default::default()
-                    });
+                    commands
+                        .spawn(SpriteBundle {
+                            material: materials.add(castle_handle.clone().into()),
+                            transform: Transform::from_translation(Vec3::new(
+                                column as f32 * map.tile_size,
+                                row as f32 * map.tile_size,
+                                0.,
+                            )),
+                            ..Default::default()
+                        })
+                        .with(MapTile {
+                            column,
+                            row,
+                            tile: tile.clone(),
+                        });
+                }
+                &Tile::Tree => {
+                    commands
+                        .spawn(SpriteBundle {
+                            material: materials.add(tree_handle.clone().into()),
+                            transform: Transform::from_translation(Vec3::new(
+                                column as f32 * map.tile_size,
+                                row as f32 * map.tile_size,
+                                0.,
+                            )),
+                            ..Default::default()
+                        })
+                        .with(MapTile {
+                            column,
+                            row,
+                            tile: tile.clone(),
+                        });
                 }
             }
         }

@@ -1,5 +1,5 @@
 use crate::bullets::{spawn_bullet, Bullet};
-use crate::enemies::Enemy;
+use crate::enemies::{Enemy, Tameable};
 use crate::map::{Coordinate, Map, Tile};
 use bevy::prelude::*;
 
@@ -50,7 +50,7 @@ fn shoot(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
-    mut enemies_query: Query<(Entity, &Transform, &mut Enemy)>,
+    mut enemies_query: Query<(Entity, &Transform, &mut Enemy), Without<Tameable>>,
 ) {
     for (tower_pos, tower, mut timer) in tower_query.iter_mut() {
         timer.tick(time.delta_seconds());

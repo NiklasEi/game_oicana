@@ -1,4 +1,4 @@
-use crate::map::Map;
+use crate::map::{Coordinate, Map, Tile};
 use bevy::prelude::*;
 use bevy::utils::Instant;
 use bevy_prototype_lyon::prelude::*;
@@ -15,6 +15,7 @@ impl Plugin for EnemiesPlugin {
         })
         .add_system(remove_enemies.system())
         .add_system(spawn_enemies.system())
+        .add_system(update_tamable_enemies.system())
         .add_system(update_enemies.system());
     }
 }
@@ -32,6 +33,10 @@ pub struct Enemy {
     pub travelled: f32,
     pub health: i32,
     pub max_health: i32,
+}
+
+pub struct Trees {
+    pub coordinates: Vec<Coordinate>,
 }
 
 impl Enemy {
@@ -231,7 +236,7 @@ fn remove_enemies(
 ) {
     for (entity, enemy) in enemy_query.iter() {
         if enemy.health < 0 {
-            commands.despawn(entity);
+            commands.insert_one(entity, Tameable);
             continue;
         }
         if enemy.current_waypoint_index >= map.waypoints.len() {
@@ -246,7 +251,10 @@ fn update_enemies(
     time: Res<Time>,
     map: Res<Map>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut enemy_query: Query<(&mut Enemy, &mut Transform, &mut Handle<ColorMaterial>)>,
+    mut enemy_query: Query<
+        (&mut Enemy, &mut Transform, &mut Handle<ColorMaterial>),
+        Without<Tameable>,
+    >,
 ) {
     let delta = time.delta().as_millis() as f32;
     let speed = 0.1;
@@ -269,6 +277,43 @@ fn update_enemies(
         } else {
             enemy.travelled += movement.length();
             transform.translation += movement;
+        }
+    }
+}
+
+fn update_tamable_enemies(
+    commands: &mut Commands,
+    time: Res<Time>,
+    trees: Res<Trees>,
+    mut enemy_query: Query<(Entity, &mut Transform), With<Tameable>>,
+) {
+    let delta = time.delta().as_secs_f32();
+    let speed = 100.;
+    for (entity, mut transform) in enemy_query.iter_mut() {
+        let (_, closest_tree_position) = trees.coordinates.iter().fold(
+            (10_000., Coordinate { x: 0., y: 0. }),
+            |acc, coordinate| {
+                let (old_distance, _) = acc;
+                let distance =
+                    (Vec3::new(coordinate.x, coordinate.y, 0.) - transform.translation).length();
+                if distance < old_distance {
+                    (distance, coordinate.clone())
+                } else {
+                    acc
+                }
+            },
+        );
+        let direction =
+            Vec3::new(closest_tree_position.x, closest_tree_position.y, 0.) - transform.translation;
+        if direction.is_finite() {
+            let movement = direction.normalize() * delta * speed;
+            if movement.length() > direction.length() {
+                commands.despawn(entity);
+            } else {
+                transform.translation += movement;
+            }
+        } else {
+            commands.despawn(entity);
         }
     }
 }
