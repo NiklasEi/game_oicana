@@ -1,3 +1,6 @@
+// disable console opening on windows
+#![windows_subsystem = "windows"]
+
 use bevy::prelude::*;
 use game_plugin::GamePlugin;
 
