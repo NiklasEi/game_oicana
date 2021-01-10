@@ -1,4 +1,6 @@
 <!-- next-header -->
+
+## [0.3.1] - 2021-01-10
 - fix wasm build
 - fix compile warnings
 - make the breach sound longer again

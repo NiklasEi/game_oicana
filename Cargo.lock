@@ -2190,7 +2190,7 @@ dependencies = [
 
 [[package]]
 name = "mini_jam_71"
-version = "0.3.1-dev"
+version = "0.3.1"
 dependencies = [
  "bevy",
  "bevy_webgl2",
