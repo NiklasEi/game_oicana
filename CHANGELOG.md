@@ -1,7 +1,10 @@
 <!-- next-header -->
+- slightly randomize the enemy health
+- moved all clouds into view
+- add some more tower spots
 
 ## [1.0.0] - 2021-01-10
--give the game a name ^^
+- give the game a name ^^
 
 ## [0.3.1] - 2021-01-10
 - fix wasm build
