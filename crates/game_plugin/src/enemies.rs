@@ -1,6 +1,6 @@
 use crate::map::{Coordinate, Map, Tile};
 use crate::puzzle::CurrentPiece;
-use crate::ui::Health;
+use crate::ui::GameState;
 use bevy::asset::HandleId;
 use bevy::prelude::*;
 use bevy::utils::{HashMap, Instant};
@@ -217,8 +217,8 @@ fn create_quadratic_enemy(
 ) {
     let path = build_quadratic_path();
     let mut enemy = Enemy {
-        max_health: 120,
-        health: 120,
+        max_health: 500,
+        health: 500,
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
         color,
@@ -248,16 +248,21 @@ pub fn build_quadratic_path() -> Path {
 fn remove_enemies(
     commands: &mut Commands,
     map: Res<Map>,
-    mut health: ResMut<Health>,
-    mut enemy_query: Query<(Entity, &Enemy)>,
+    mut game_state: ResMut<GameState>,
+    mut enemy_query: Query<(Entity, &Enemy), Without<Tameable>>,
 ) {
     for (entity, enemy) in enemy_query.iter() {
         if enemy.health < 0 {
+            if game_state.health > 0 {
+                game_state.score += 1;
+            }
             commands.insert_one(entity, Tameable);
             continue;
         }
         if enemy.current_waypoint_index >= map.waypoints.len() {
-            health.health -= 1;
+            if game_state.health > 0 {
+                game_state.health -= 1;
+            }
             commands.despawn(entity);
             continue;
         }
@@ -306,7 +311,7 @@ fn update_tamable_enemies(
     mut enemy_query: Query<(Entity, &mut Transform), With<Tameable>>,
 ) {
     let delta = time.delta().as_secs_f32();
-    let speed = 80.;
+    let speed = 50.;
     for (entity, mut transform) in enemy_query.iter_mut() {
         if let Some(picked_entity) = currently_picked_up.entity {
             if picked_entity == entity {

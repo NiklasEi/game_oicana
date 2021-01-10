@@ -232,7 +232,7 @@ fn pick_up_piece(
                     transform.translation.y - cursor_position.y,
                 )
                 .length()
-                    < 10.
+                    < 12.
                 {
                     currently_picked.entity = Some(entity);
                     currently_picked.piece = Some(Piece {
@@ -252,7 +252,7 @@ fn pick_up_piece(
                         transform.translation.y - cursor_position.y,
                     )
                     .length()
-                        > 10.
+                        > 12.
                 {
                     continue;
                 }
