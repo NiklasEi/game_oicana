@@ -16,6 +16,7 @@ impl Plugin for MapPlugin {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Tile {
     Path,
+    Spawn,
     TowerPlot,
     Tower,
     Castle,
@@ -106,7 +107,7 @@ impl Map {
                             x: column_index as f32 * map.tile_size,
                             y: row_index as f32 * map.tile_size,
                         };
-                        row.push(Tile::Path)
+                        row.push(Tile::Spawn)
                     }
                     'q' => {
                         sink = Point {
@@ -202,6 +203,7 @@ fn render_map(
     let path_handle: Handle<Texture> = asset_server.load("path64x64.png");
     let castle_handle: Handle<Texture> = asset_server.load("castle64x64.png");
     let tree_handle: Handle<Texture> = asset_server.load("tree64x64.png");
+    let spawn_handle: Handle<Texture> = asset_server.load("spawn.png");
 
     for row in 0..map.height {
         for column in 0..map.width {
@@ -296,6 +298,23 @@ fn render_map(
                     commands
                         .spawn(SpriteBundle {
                             material: materials.add(tree_handle.clone().into()),
+                            transform: Transform::from_translation(Vec3::new(
+                                column as f32 * map.tile_size,
+                                row as f32 * map.tile_size,
+                                0.,
+                            )),
+                            ..Default::default()
+                        })
+                        .with(MapTile {
+                            column,
+                            row,
+                            tile: tile.clone(),
+                        });
+                }
+                &Tile::Spawn => {
+                    commands
+                        .spawn(SpriteBundle {
+                            material: materials.add(spawn_handle.clone().into()),
                             transform: Transform::from_translation(Vec3::new(
                                 column as f32 * map.tile_size,
                                 row as f32 * map.tile_size,

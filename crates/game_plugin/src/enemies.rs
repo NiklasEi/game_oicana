@@ -85,7 +85,7 @@ pub enum EnemyColor {
     Lilac,
     Green,
     Blue,
-    Pink
+    Pink,
 }
 
 impl Distribution<EnemyColor> for Standard {
@@ -103,11 +103,11 @@ impl Distribution<EnemyColor> for Standard {
 impl EnemyColor {
     pub fn to_color(&self) -> Color {
         match self {
-            EnemyColor::Lilac => Color::rgb(84./255., 13./255., 110./255.),
-            EnemyColor::Red => Color::rgb(235./255., 66./255., 102./255.),
-            EnemyColor::Green => Color::rgb(83./255., 145./255., 126./255.),
-            EnemyColor::Pink => Color::rgb(217./255., 154./255., 197./255.),
-            EnemyColor::Blue => Color::rgb(88./255., 84./255., 129./255.),
+            EnemyColor::Lilac => Color::rgb(84. / 255., 13. / 255., 110. / 255.),
+            EnemyColor::Red => Color::rgb(235. / 255., 66. / 255., 102. / 255.),
+            EnemyColor::Green => Color::rgb(83. / 255., 145. / 255., 126. / 255.),
+            EnemyColor::Pink => Color::rgb(217. / 255., 154. / 255., 197. / 255.),
+            EnemyColor::Blue => Color::rgb(88. / 255., 84. / 255., 129. / 255.),
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::bullets::{spawn_bullet, Bullet};
 use crate::enemies::{Enemy, Tameable};
-use crate::map::{Coordinate, Map, Tile};
+use crate::map::{Coordinate, Map, MapTile, Tile};
 use crate::puzzle::CompletePuzzle;
 use bevy::prelude::*;
 
@@ -101,7 +101,10 @@ fn build_and_upgrade_towers(
     commands: &mut Commands,
     mut event_reader: Local<EventReader<CompletePuzzle>>,
     completed_puzzle: Res<Events<CompletePuzzle>>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut tower_query: Query<(&mut Tower)>,
+    mut map_tiles_query: Query<(&Transform, &mut Handle<ColorMaterial>), With<MapTile>>,
 ) {
     for completed_puzzle in event_reader.iter(&completed_puzzle) {
         let coordinate: Coordinate = completed_puzzle.coordinate.clone();
@@ -113,6 +116,14 @@ fn build_and_upgrade_towers(
             tower.damage += 5;
             tower.range += 5.;
         } else {
+            let tower_handle: Handle<Texture> = asset_server.load("tower64x64.png");
+            for (transform, mut material) in map_tiles_query.iter_mut() {
+                if transform.translation.x == coordinate.x
+                    && transform.translation.y == coordinate.y
+                {
+                    *material = materials.add(tower_handle.clone().into())
+                }
+            }
             commands
                 .spawn((
                     Tower {
