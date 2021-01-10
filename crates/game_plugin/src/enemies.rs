@@ -1,4 +1,5 @@
 use crate::map::{Coordinate, Map, Tile};
+use crate::puzzle::CurrentPiece;
 use crate::ui::Health;
 use bevy::asset::HandleId;
 use bevy::prelude::*;
@@ -30,8 +31,8 @@ pub struct Tameable;
 
 pub struct Enemy {
     current_waypoint_index: usize,
-    form: EnemyForm,
-    color: EnemyColor,
+    pub form: EnemyForm,
+    pub color: EnemyColor,
     color_handle_map: HashMap<i32, HandleId>,
     pub travelled: f32,
     pub health: i32,
@@ -61,7 +62,7 @@ impl Enemy {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum EnemyForm {
     Circle,
     Triangle,
@@ -78,7 +79,7 @@ impl Distribution<EnemyForm> for Standard {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EnemyColor {
     Red,
     Blue,
@@ -301,11 +302,17 @@ fn update_tamable_enemies(
     commands: &mut Commands,
     time: Res<Time>,
     trees: Res<Trees>,
+    currently_picked_up: Res<CurrentPiece>,
     mut enemy_query: Query<(Entity, &mut Transform), With<Tameable>>,
 ) {
     let delta = time.delta().as_secs_f32();
     let speed = 80.;
     for (entity, mut transform) in enemy_query.iter_mut() {
+        if let Some(picked_entity) = currently_picked_up.entity {
+            if picked_entity == entity {
+                continue;
+            }
+        }
         let (_, closest_tree_position) = trees.coordinates.iter().fold(
             (10_000., Coordinate { x: 0., y: 0. }),
             |acc, coordinate| {

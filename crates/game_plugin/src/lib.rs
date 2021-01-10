@@ -18,7 +18,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(ClearColor(Color::LIME_GREEN))
+        app.add_resource(ClearColor(Color::BLACK))
             .add_plugin(MapPlugin)
             .add_plugin(EnemiesPlugin)
             .add_plugin(TowersPlugin)
