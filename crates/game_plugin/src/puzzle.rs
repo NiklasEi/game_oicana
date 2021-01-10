@@ -6,8 +6,8 @@ use crate::map::{Coordinate, Map, Tile};
 use bevy::ecs::bevy_utils::HashMap;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::{point, FillOptions, LineJoin, PathBuilder, StrokeOptions};
-use std::f32::consts::PI;
 use rand::random;
+use std::f32::consts::PI;
 
 pub struct PuzzlePlugin;
 
@@ -22,12 +22,20 @@ impl Plugin for PuzzlePlugin {
                 entity: None,
                 piece: None,
             })
-            .add_resource(Puzzles { new_towers: vec![] })
+            .add_event::<CompletePuzzle>()
+            .add_resource(Puzzles { towers: vec![] })
             .add_startup_system(set_tower_puzzles.system())
             .add_system(pick_up_piece.system()) /*.add_system(show_cursor.system())*/
             .add_system(update_picked_up_piece.system())
-            .add_system(update_puzzle_slots.system());
+            .add_system(update_puzzle_slots.system())
+            .add_system(update_puzzle.system());
     }
+}
+
+#[derive(Debug)]
+pub struct CompletePuzzle {
+    pub coordinate: Coordinate,
+    puzzle_id: usize,
 }
 
 #[derive(Default)]
@@ -62,7 +70,7 @@ pub struct PickSource {
 }
 
 pub struct Puzzles {
-    new_towers: Vec<Puzzle>,
+    towers: Vec<Puzzle>,
 }
 
 pub struct Puzzle {
@@ -82,17 +90,17 @@ struct ToFill;
 
 fn set_tower_puzzles(
     commands: &mut Commands,
-    mut puzzle_ids: ResMut<PuzzleIdFactory>,
     mut puzzles: ResMut<Puzzles>,
     map: Res<Map>,
+    mut puzzle_ids: ResMut<PuzzleIdFactory>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let mut new_tower_positions: Vec<Coordinate> = vec![];
+    let mut tower_positions: Vec<Coordinate> = vec![];
     for (row_index, row) in map.tiles.iter().enumerate() {
         for (column_index, tile) in row.iter().enumerate() {
-            if tile == &Tile::TowerPlot {
-                new_tower_positions.push(Coordinate {
+            if tile == &Tile::TowerPlot || tile == &Tile::Tower {
+                tower_positions.push(Coordinate {
                     x: column_index as f32 * map.tile_size,
                     y: row_index as f32 * map.tile_size,
                 })
@@ -100,76 +108,87 @@ fn set_tower_puzzles(
         }
     }
 
-    for coordinate in new_tower_positions {
+    for coordinate in tower_positions {
         let id = puzzle_ids.get_next_id();
-        let puzzle = Puzzle {
-            coordinate: coordinate.clone(),
-            filled: 0,
-            id,
-            pieces: [
-                Piece {
-                    color: random(),
-                    form: random(),
-                },
-                Piece {
-                    color: random(),
-                    form: random(),
-                },
-                Piece {
-                    color: random(),
-                    form: random(),
-                },
-                Piece {
-                    color: random(),
-                    form: random(),
-                },
-            ],
-        };
-        for (index, piece) in puzzle.pieces.iter().enumerate() {
-            let path = match piece.form {
-                EnemyForm::Circle => build_circle_path(),
-                EnemyForm::Triangle => build_triangle_path(),
-                EnemyForm::Quadratic => build_quadratic_path(),
-            };
-            let coordinate = match index {
-                0 => Coordinate {
-                    x: coordinate.x - 16.,
-                    y: coordinate.y - 16.,
-                },
-                1 => Coordinate {
-                    x: coordinate.x + 16.,
-                    y: coordinate.y - 16.,
-                },
-                2 => Coordinate {
-                    x: coordinate.x + 16.,
-                    y: coordinate.y + 16.,
-                },
-                _ => Coordinate {
-                    x: coordinate.x - 16.,
-                    y: coordinate.y + 16.,
-                },
-            };
+        let puzzle = spawn_puzzle(id, coordinate, commands, &mut meshes, &mut materials);
 
-            commands
-                .spawn(
-                    path.stroke(
-                        materials.add(piece.color.to_color().into()),
-                        &mut meshes,
-                        Vec3::new(coordinate.x, coordinate.y, 0.),
-                        &StrokeOptions::default()
-                            .with_line_width(2.)
-                            .with_line_join(LineJoin::Round),
-                    ),
-                )
-                .with(PuzzleSlot {
-                    piece: piece.clone(),
-                    filled: false,
-                    puzzle_id: id,
-                });
-        }
-
-        puzzles.new_towers.push(puzzle);
+        puzzles.towers.push(puzzle);
     }
+}
+
+fn spawn_puzzle(
+    id: usize,
+    coordinate: Coordinate,
+    commands: &mut Commands,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) -> Puzzle {
+    let puzzle = Puzzle {
+        coordinate: coordinate.clone(),
+        filled: 0,
+        id,
+        pieces: [
+            Piece {
+                color: random(),
+                form: random(),
+            },
+            Piece {
+                color: random(),
+                form: random(),
+            },
+            Piece {
+                color: random(),
+                form: random(),
+            },
+            Piece {
+                color: random(),
+                form: random(),
+            },
+        ],
+    };
+    for (index, piece) in puzzle.pieces.iter().enumerate() {
+        let path = match piece.form {
+            EnemyForm::Circle => build_circle_path(),
+            EnemyForm::Triangle => build_triangle_path(),
+            EnemyForm::Quadratic => build_quadratic_path(),
+        };
+        let coordinate = match index {
+            0 => Coordinate {
+                x: coordinate.x - 16.,
+                y: coordinate.y - 16.,
+            },
+            1 => Coordinate {
+                x: coordinate.x + 16.,
+                y: coordinate.y - 16.,
+            },
+            2 => Coordinate {
+                x: coordinate.x + 16.,
+                y: coordinate.y + 16.,
+            },
+            _ => Coordinate {
+                x: coordinate.x - 16.,
+                y: coordinate.y + 16.,
+            },
+        };
+
+        commands
+            .spawn(
+                path.stroke(
+                    materials.add(piece.color.to_color().into()),
+                    &mut meshes,
+                    Vec3::new(coordinate.x, coordinate.y, 0.),
+                    &StrokeOptions::default()
+                        .with_line_width(2.)
+                        .with_line_join(LineJoin::Round),
+                ),
+            )
+            .with(PuzzleSlot {
+                piece: piece.clone(),
+                filled: false,
+                puzzle_id: id,
+            });
+    }
+    puzzle
 }
 
 fn update_puzzle_slots(
@@ -177,10 +196,24 @@ fn update_puzzle_slots(
     mut puzzles: ResMut<Puzzles>,
     query: Query<(Entity, &Transform, &PuzzleSlot), With<ToFill>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut complete_puzzle: ResMut<Events<CompletePuzzle>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for (entity, transform, slot) in query.iter() {
         commands.despawn(entity);
+        let puzzle = puzzles
+            .towers
+            .iter_mut()
+            .find(|puzzle| puzzle.id == slot.puzzle_id)
+            .unwrap();
+        puzzle.filled += 1;
+        if puzzle.filled == 4 {
+            complete_puzzle.send(CompletePuzzle {
+                coordinate: puzzle.coordinate.clone(),
+                puzzle_id: puzzle.id,
+            });
+            continue;
+        }
         let path = match slot.piece.form {
             EnemyForm::Circle => build_circle_path(),
             EnemyForm::Triangle => build_triangle_path(),
@@ -197,15 +230,6 @@ fn update_puzzle_slots(
                 filled: true,
                 ..slot.clone()
             });
-        let puzzle = puzzles
-            .new_towers
-            .iter_mut()
-            .find(|puzzle| puzzle.id == slot.puzzle_id)
-            .unwrap();
-        puzzle.filled += 1;
-        if puzzle.filled == 4 {
-            println!("completed the puzzle!");
-        }
     }
 }
 
@@ -315,5 +339,39 @@ fn update_picked_up_piece(
             pick_source.last_cursor_pos.y,
             0.,
         );
+    }
+}
+
+fn update_puzzle(
+    commands: &mut Commands,
+    mut puzzles: ResMut<Puzzles>,
+    mut my_event_reader: Local<EventReader<CompletePuzzle>>,
+    my_events: Res<Events<CompletePuzzle>>,
+    slot_query: Query<(Entity, &PuzzleSlot)>,
+    mut puzzle_ids: ResMut<PuzzleIdFactory>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    for completed_puzzle in my_event_reader.iter(&my_events) {
+        let puzzle_id = completed_puzzle.puzzle_id;
+        puzzles.towers = puzzles
+            .towers
+            .drain(..)
+            .filter(|puzzle| puzzle.id != puzzle_id)
+            .collect();
+        for (entity, slot) in slot_query.iter() {
+            if slot.puzzle_id == puzzle_id {
+                commands.despawn(entity);
+            }
+        }
+        let id = puzzle_ids.get_next_id();
+        let puzzle = spawn_puzzle(
+            id,
+            completed_puzzle.coordinate.clone(),
+            commands,
+            &mut meshes,
+            &mut materials,
+        );
+        puzzles.towers.push(puzzle);
     }
 }

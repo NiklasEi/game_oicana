@@ -8,6 +8,7 @@ impl Plugin for UiPlugin {
         app.add_resource(GameState {
             health: 20,
             score: 0,
+            enemy_health: 100,
         })
         .add_startup_system(init_life.system())
         .add_system(update_game_state.system())
@@ -22,6 +23,7 @@ struct ScoreText;
 pub struct GameState {
     pub health: usize,
     pub score: usize,
+    pub enemy_health: i32,
 }
 
 fn init_life(

@@ -108,6 +108,7 @@ fn spawn_enemies(
     mut meshes: ResMut<Assets<Mesh>>,
     map: Res<Map>,
     time: Res<Time>,
+    mut game_state: ResMut<GameState>,
     mut wave_state: ResMut<WaveState>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
@@ -123,19 +124,34 @@ fn spawn_enemies(
     } else if time.last_update().is_some() {
         wave_state.last_spawn = time.last_update().unwrap();
     }
-
+    game_state.enemy_health += 1;
     let form: EnemyForm = random();
     let color: EnemyColor = random();
     match form {
-        EnemyForm::Circle => {
-            create_circle_enemy(commands, &mut materials, color, &map, &mut meshes)
-        }
-        EnemyForm::Quadratic => {
-            create_quadratic_enemy(commands, &mut materials, color, &map, &mut meshes)
-        }
-        EnemyForm::Triangle => {
-            create_triangle_enemy(commands, &mut materials, color, &map, &mut meshes)
-        }
+        EnemyForm::Circle => create_circle_enemy(
+            commands,
+            &mut materials,
+            color,
+            &map,
+            &game_state,
+            &mut meshes,
+        ),
+        EnemyForm::Quadratic => create_quadratic_enemy(
+            commands,
+            &mut materials,
+            color,
+            &map,
+            &game_state,
+            &mut meshes,
+        ),
+        EnemyForm::Triangle => create_triangle_enemy(
+            commands,
+            &mut materials,
+            color,
+            &map,
+            &game_state,
+            &mut meshes,
+        ),
     }
 }
 
@@ -144,14 +160,15 @@ fn create_circle_enemy(
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
     color: EnemyColor,
     map: &Res<Map>,
+    game_state: &GameState,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     let path = build_circle_path();
     let mut enemy = Enemy {
         current_waypoint_index: 0,
         form: EnemyForm::Circle,
-        health: 100,
-        max_health: 100,
+        health: game_state.enemy_health,
+        max_health: game_state.enemy_health,
         color_handle_map: HashMap::default(),
         color,
         travelled: 0.,
@@ -177,12 +194,13 @@ fn create_triangle_enemy(
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
     color: EnemyColor,
     map: &Res<Map>,
+    game_state: &GameState,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     let path = build_triangle_path();
     let mut enemy = Enemy {
-        health: 100,
-        max_health: 100,
+        health: game_state.enemy_health,
+        max_health: game_state.enemy_health,
         current_waypoint_index: 0,
         form: EnemyForm::Triangle,
         color_handle_map: HashMap::default(),
@@ -213,12 +231,13 @@ fn create_quadratic_enemy(
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
     color: EnemyColor,
     map: &Res<Map>,
+    game_state: &GameState,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     let path = build_quadratic_path();
     let mut enemy = Enemy {
-        max_health: 500,
-        health: 500,
+        health: game_state.enemy_health,
+        max_health: game_state.enemy_health,
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
         color,
@@ -254,7 +273,7 @@ fn remove_enemies(
     for (entity, enemy) in enemy_query.iter() {
         if enemy.health < 0 {
             if game_state.health > 0 {
-                game_state.score += 1;
+                game_state.score += enemy.max_health as usize;
             }
             commands.insert_one(entity, Tameable);
             continue;

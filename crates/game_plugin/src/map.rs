@@ -29,7 +29,7 @@ struct Point {
     pub y: usize,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Coordinate {
     pub x: f32,
     pub y: f32,

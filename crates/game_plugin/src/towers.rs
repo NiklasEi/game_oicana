@@ -1,6 +1,7 @@
 use crate::bullets::{spawn_bullet, Bullet};
 use crate::enemies::{Enemy, Tameable};
 use crate::map::{Coordinate, Map, Tile};
+use crate::puzzle::CompletePuzzle;
 use bevy::prelude::*;
 
 pub struct TowersPlugin;
@@ -8,13 +9,16 @@ pub struct TowersPlugin;
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system(spawn_map_tower.system())
-            .add_system(shoot.system());
+            .add_system(shoot.system())
+            .add_system(build_and_upgrade_towers.system());
     }
 }
 
 struct Tower {
     range: f32,
     damage: i32,
+    speed: f32,
+    coordinate: Coordinate,
 }
 
 fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
@@ -37,6 +41,8 @@ fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
                 Tower {
                     range: 100.,
                     damage: 15,
+                    speed: 200.,
+                    coordinate: coordinate.clone(),
                 },
                 Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
             ))
@@ -76,7 +82,7 @@ fn shoot(
             if let Some((target, _)) = furthest_target {
                 let bullet = Bullet {
                     damage: tower.damage,
-                    speed: 200.,
+                    speed: tower.speed,
                     target,
                 };
                 spawn_bullet(
@@ -87,6 +93,37 @@ fn shoot(
                     &mut meshes,
                 );
             }
+        }
+    }
+}
+
+fn build_and_upgrade_towers(
+    commands: &mut Commands,
+    mut event_reader: Local<EventReader<CompletePuzzle>>,
+    completed_puzzle: Res<Events<CompletePuzzle>>,
+    mut tower_query: Query<(&mut Tower)>,
+) {
+    for completed_puzzle in event_reader.iter(&completed_puzzle) {
+        let coordinate: Coordinate = completed_puzzle.coordinate.clone();
+        if let Some((mut tower)) = tower_query
+            .iter_mut()
+            .find(|(tower)| tower.coordinate == coordinate)
+        {
+            tower.speed += 20.;
+            tower.damage += 5;
+            tower.range += 100.;
+        } else {
+            commands
+                .spawn((
+                    Tower {
+                        range: 100.,
+                        damage: 15,
+                        speed: 200.,
+                        coordinate: coordinate.clone(),
+                    },
+                    Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+                ))
+                .with(Timer::from_seconds(0.3, true));
         }
     }
 }
