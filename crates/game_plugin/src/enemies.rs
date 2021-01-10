@@ -61,6 +61,7 @@ impl Enemy {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum EnemyForm {
     Circle,
     Triangle,
@@ -77,7 +78,7 @@ impl Distribution<EnemyForm> for Standard {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum EnemyColor {
     Red,
     Blue,
@@ -215,8 +216,8 @@ fn create_quadratic_enemy(
 ) {
     let path = build_quadratic_path();
     let mut enemy = Enemy {
-        max_health: 500,
-        health: 500,
+        max_health: 120,
+        health: 120,
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
         color,
@@ -303,7 +304,7 @@ fn update_tamable_enemies(
     mut enemy_query: Query<(Entity, &mut Transform), With<Tameable>>,
 ) {
     let delta = time.delta().as_secs_f32();
-    let speed = 100.;
+    let speed = 80.;
     for (entity, mut transform) in enemy_query.iter_mut() {
         let (_, closest_tree_position) = trees.coordinates.iter().fold(
             (10_000., Coordinate { x: 0., y: 0. }),

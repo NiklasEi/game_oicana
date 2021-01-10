@@ -8,6 +8,7 @@ mod ui;
 use crate::bullets::BulletPlugin;
 use crate::enemies::EnemiesPlugin;
 use crate::map::MapPlugin;
+use crate::puzzle::PuzzlePlugin;
 use crate::towers::TowersPlugin;
 use crate::ui::UiPlugin;
 
@@ -22,6 +23,7 @@ impl Plugin for GamePlugin {
             .add_plugin(EnemiesPlugin)
             .add_plugin(TowersPlugin)
             .add_plugin(BulletPlugin)
-            .add_plugin(UiPlugin);
+            .add_plugin(UiPlugin)
+            .add_plugin(PuzzlePlugin);
     }
 }
