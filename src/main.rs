@@ -17,7 +17,7 @@ fn main() {
         .add_resource(WindowDescriptor {
             width: 800.,
             height: 600.,
-            title: "TD with puzzles".to_string(),
+            title: "Oicana | Mini Jam 71".to_string(),
             ..Default::default()
         })
         .add_plugins(DefaultPlugins);
