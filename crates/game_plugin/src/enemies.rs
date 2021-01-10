@@ -124,6 +124,9 @@ fn spawn_enemies(
     } else if time.last_update().is_some() {
         wave_state.last_spawn = time.last_update().unwrap();
     }
+    if game_state.health < 1 {
+        return;
+    }
     game_state.enemy_health += 1;
     let form: EnemyForm = random();
     let color: EnemyColor = random();

@@ -141,20 +141,18 @@ fn show_lost(
                 ..Default::default()
             })
             .with_children(|parent| {
-                parent
-                    .spawn(TextBundle {
-                        text: Text {
-                            value: "You lost! Restart to try again ;)".to_owned(),
-                            font,
-                            style: TextStyle {
-                                font_size: 40.0,
-                                color: Color::rgb(0.6, 0.6, 0.6),
-                                ..Default::default()
-                            },
+                parent.spawn(TextBundle {
+                    text: Text {
+                        value: "You lost! Restart to try again ;)".to_owned(),
+                        font,
+                        style: TextStyle {
+                            font_size: 40.0,
+                            color: Color::rgb(0.6, 0.6, 0.6),
+                            ..Default::default()
                         },
-                        ..Default::default()
-                    })
-                    .with(HealthText);
+                    },
+                    ..Default::default()
+                });
             });
     }
 }
