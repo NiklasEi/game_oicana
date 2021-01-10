@@ -1,7 +1,8 @@
 use crate::map::{Coordinate, Map, Tile};
 use crate::ui::Health;
+use bevy::asset::HandleId;
 use bevy::prelude::*;
-use bevy::utils::Instant;
+use bevy::utils::{HashMap, Instant};
 use bevy_prototype_lyon::prelude::*;
 use rand::distributions::Standard;
 use rand::prelude::*;
@@ -31,6 +32,7 @@ pub struct Enemy {
     current_waypoint_index: usize,
     form: EnemyForm,
     color: EnemyColor,
+    color_handle_map: HashMap<i32, HandleId>,
     pub travelled: f32,
     pub health: i32,
     pub max_health: i32,
@@ -42,18 +44,24 @@ pub struct Trees {
 
 impl Enemy {
     pub fn get_color_handle(
-        &self,
+        &mut self,
         mut materials: &mut ResMut<Assets<ColorMaterial>>,
     ) -> Handle<ColorMaterial> {
+        let cached_color_handle_id = self.color_handle_map.get(&self.health);
+        if let Some(&handle) = cached_color_handle_id {
+            return materials.get_handle(handle);
+        }
         let health_factor = self.health as f32 / self.max_health as f32;
         let full_color =
             Color::GRAY * health_factor * 2. + self.color.to_color() * (1. - health_factor);
 
-        materials.add(full_color.into())
+        let color_handle = materials.add(full_color.into());
+        self.color_handle_map.insert(self.health, color_handle.id);
+        color_handle
     }
 }
 
-enum EnemyForm {
+pub enum EnemyForm {
     Circle,
     Triangle,
     Quadratic,
@@ -70,7 +78,7 @@ impl Distribution<EnemyForm> for Standard {
 }
 
 #[derive(Clone)]
-enum EnemyColor {
+pub enum EnemyColor {
     Red,
     Blue,
 }
@@ -85,16 +93,6 @@ impl Distribution<EnemyColor> for Standard {
 }
 
 impl EnemyColor {
-    pub fn get_color_material_handle(
-        self,
-        mut materials: &mut ResMut<Assets<ColorMaterial>>,
-    ) -> Handle<ColorMaterial> {
-        match self {
-            EnemyColor::Blue => materials.add(Color::BLUE.into()),
-            EnemyColor::Red => materials.add(Color::RED.into()),
-        }
-    }
-
     pub fn to_color(&self) -> Color {
         match self {
             EnemyColor::Blue => Color::BLUE,
@@ -146,14 +144,13 @@ fn create_circle_enemy(
     map: &Res<Map>,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
-    let mut builder = PathBuilder::new();
-    builder.arc(point(0.000001, 0.000001), 10., 10., 2. * PI, 0.1);
-    let path = builder.build();
-    let enemy = Enemy {
+    let path = build_circle_path();
+    let mut enemy = Enemy {
         current_waypoint_index: 0,
         form: EnemyForm::Circle,
         health: 100,
         max_health: 100,
+        color_handle_map: HashMap::default(),
         color,
         travelled: 0.,
     };
@@ -167,6 +164,12 @@ fn create_circle_enemy(
         .with(enemy);
 }
 
+pub fn build_circle_path() -> Path {
+    let mut builder = PathBuilder::new();
+    builder.arc(point(0.000001, 0.000001), 10., 10., 2. * PI, 0.1);
+    builder.build()
+}
+
 fn create_triangle_enemy(
     commands: &mut Commands,
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
@@ -174,17 +177,13 @@ fn create_triangle_enemy(
     map: &Res<Map>,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
-    let mut builder = PathBuilder::new();
-    builder.move_to(point(-5., 9.));
-    builder.line_to(point(-5., -9.));
-    builder.line_to(point(10., 0.));
-    builder.line_to(point(-5., 9.));
-    let path = builder.build();
-    let enemy = Enemy {
+    let path = build_triangle_path();
+    let mut enemy = Enemy {
         health: 100,
         max_health: 100,
         current_waypoint_index: 0,
         form: EnemyForm::Triangle,
+        color_handle_map: HashMap::default(),
         color,
         travelled: 0.,
     };
@@ -198,6 +197,15 @@ fn create_triangle_enemy(
         .with(enemy);
 }
 
+pub fn build_triangle_path() -> Path {
+    let mut builder = PathBuilder::new();
+    builder.move_to(point(-5., 9.));
+    builder.line_to(point(-5., -9.));
+    builder.line_to(point(10., 0.));
+    builder.line_to(point(-5., 9.));
+    builder.build()
+}
+
 fn create_quadratic_enemy(
     commands: &mut Commands,
     mut materials: &mut ResMut<Assets<ColorMaterial>>,
@@ -205,19 +213,14 @@ fn create_quadratic_enemy(
     map: &Res<Map>,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
-    let mut builder = PathBuilder::new();
-    builder.move_to(point(-9., 9.));
-    builder.line_to(point(-9., -9.));
-    builder.line_to(point(9., -9.));
-    builder.line_to(point(9., 9.));
-    builder.line_to(point(-9., 9.));
-    let path = builder.build();
-    let enemy = Enemy {
+    let path = build_quadratic_path();
+    let mut enemy = Enemy {
         max_health: 500,
         health: 500,
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
         color,
+        color_handle_map: HashMap::default(),
         travelled: 0.,
     };
     commands
@@ -228,6 +231,16 @@ fn create_quadratic_enemy(
             &FillOptions::default(),
         ))
         .with(enemy);
+}
+
+pub fn build_quadratic_path() -> Path {
+    let mut builder = PathBuilder::new();
+    builder.move_to(point(-9., 9.));
+    builder.line_to(point(-9., -9.));
+    builder.line_to(point(9., -9.));
+    builder.line_to(point(9., 9.));
+    builder.line_to(point(-9., 9.));
+    builder.build()
 }
 
 fn remove_enemies(

@@ -5,7 +5,7 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(Health { health: 5 })
+        app.add_resource(Health { health: 100 })
             .add_startup_system(init_life.system())
             .add_system(show_life.system());
     }
@@ -64,11 +64,10 @@ fn show_life(
     mut query: Query<(&mut Text, &HealthText)>,
     mut signal: ResMut<Events<AppExit>>,
 ) {
-    if health.health < 1 {
-        signal.send(AppExit);
-        return;
-    }
     for (mut text, _tag) in query.iter_mut() {
         text.value = format!("Health: {}", health.health);
+    }
+    if health.health < 1 {
+        signal.send(AppExit);
     }
 }

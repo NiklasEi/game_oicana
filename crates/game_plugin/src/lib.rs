@@ -1,6 +1,7 @@
 mod bullets;
 mod enemies;
 mod map;
+mod puzzle;
 mod towers;
 mod ui;
 
