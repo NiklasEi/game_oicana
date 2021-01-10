@@ -1,6 +1,5 @@
 use crate::enemies::EnemyBreach;
 use crate::towers::TowerShot;
-use bevy::asset::HandleId;
 use bevy::prelude::*;
 
 pub struct AudioPlugin;
@@ -10,7 +9,8 @@ impl Plugin for AudioPlugin {
         app.add_resource(BackgroundTimer::from_seconds(3. * 60., true))
             .add_startup_system(start_background.system())
             .add_system(tower_shots.system())
-            .add_system(enemy_breach.system());
+            .add_system(enemy_breach.system())
+            .add_system(background.system());
     }
 }
 

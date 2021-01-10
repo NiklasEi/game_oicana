@@ -1,4 +1,4 @@
-use crate::map::{Coordinate, Map, Tile};
+use crate::map::{Coordinate, Map};
 use crate::puzzle::CurrentPiece;
 use crate::ui::GameState;
 use bevy::asset::HandleId;
@@ -7,7 +7,7 @@ use bevy::utils::{HashMap, Instant};
 use bevy_prototype_lyon::prelude::*;
 use rand::distributions::Standard;
 use rand::prelude::*;
-use std::f32::consts::{FRAC_PI_6, PI};
+use std::f32::consts::PI;
 
 pub struct EnemiesPlugin;
 
@@ -49,13 +49,17 @@ pub struct Trees {
 impl Enemy {
     pub fn get_color_handle(
         &mut self,
-        mut materials: &mut ResMut<Assets<ColorMaterial>>,
+        materials: &mut ResMut<Assets<ColorMaterial>>,
     ) -> Handle<ColorMaterial> {
         let cached_color_handle_id = self.color_handle_map.get(&self.health);
         if let Some(&handle) = cached_color_handle_id {
             return materials.get_handle(handle);
         }
-        let health_factor = self.health as f32 / self.max_health as f32;
+        let health_factor = if self.health > 0 {
+            self.health as f32 / self.max_health as f32
+        } else {
+            0.
+        };
         let full_color = Color::GRAY * health_factor + self.color.to_color() * (1. - health_factor);
 
         let color_handle = materials.add(full_color.into());
@@ -171,7 +175,7 @@ fn spawn_enemies(
 
 fn create_circle_enemy(
     commands: &mut Commands,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
     color: EnemyColor,
     map: &Res<Map>,
     game_state: &GameState,
@@ -283,7 +287,7 @@ fn remove_enemies(
     map: Res<Map>,
     mut game_state: ResMut<GameState>,
     mut enemy_breach: ResMut<Events<EnemyBreach>>,
-    mut enemy_query: Query<(Entity, &Enemy), Without<Tameable>>,
+    enemy_query: Query<(Entity, &Enemy), Without<Tameable>>,
 ) {
     for (entity, enemy) in enemy_query.iter() {
         if enemy.health < 0 {

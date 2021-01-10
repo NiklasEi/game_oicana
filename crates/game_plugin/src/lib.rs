@@ -29,8 +29,7 @@ impl Plugin for GamePlugin {
             .add_plugin(BulletPlugin)
             .add_plugin(UiPlugin)
             .add_plugin(PuzzlePlugin);
-        if cfg!(feature = "native") {
-            app.add_plugin(AudioPlugin);
-        }
+        #[cfg(feature = "native")]
+        app.add_plugin(AudioPlugin);
     }
 }

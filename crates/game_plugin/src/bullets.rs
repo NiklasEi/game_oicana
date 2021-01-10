@@ -45,7 +45,7 @@ pub fn spawn_bullet(
     commands: &mut Commands,
     bullet: Bullet,
     translation: Vec3,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
     meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     let mut builder = PathBuilder::new();

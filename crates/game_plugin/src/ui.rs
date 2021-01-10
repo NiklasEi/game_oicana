@@ -1,4 +1,3 @@
-use bevy::app::AppExit;
 use bevy::prelude::*;
 
 pub struct UiPlugin;

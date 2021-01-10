@@ -71,7 +71,7 @@ fn shoot(
                     let distance = pos.translation - tower_pos.translation;
                     distance.length() < tower.range
                 })
-                .fold(None, |acc, (entity, pos, enemy)| {
+                .fold(None, |acc, (entity, _, enemy)| {
                     if let Some((_, old_travelled)) = acc {
                         if enemy.travelled > old_travelled {
                             Some((entity.clone(), enemy.travelled))
@@ -108,14 +108,14 @@ fn build_and_upgrade_towers(
     completed_puzzle: Res<Events<CompletePuzzle>>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut tower_query: Query<(&mut Tower)>,
+    mut tower_query: Query<&mut Tower>,
     mut map_tiles_query: Query<(&Transform, &mut Handle<ColorMaterial>), With<MapTile>>,
 ) {
     for completed_puzzle in event_reader.iter(&completed_puzzle) {
         let coordinate: Coordinate = completed_puzzle.coordinate.clone();
-        if let Some((mut tower)) = tower_query
+        if let Some(mut tower) = tower_query
             .iter_mut()
-            .find(|(tower)| tower.coordinate == coordinate)
+            .find(|tower| tower.coordinate == coordinate)
         {
             tower.speed += 20.;
             tower.damage += 5;

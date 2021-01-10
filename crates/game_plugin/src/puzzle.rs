@@ -3,7 +3,6 @@ use crate::enemies::{
     Tameable,
 };
 use crate::map::{Coordinate, Map, Tile};
-use bevy::ecs::bevy_utils::HashMap;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::{point, FillOptions, LineJoin, PathBuilder, StrokeOptions};
 use rand::random;
@@ -304,6 +303,7 @@ fn pick_up_piece(
     }
 }
 
+#[allow(dead_code)]
 fn show_cursor(
     commands: &mut Commands,
     pick_source: Res<PickSource>,
@@ -328,12 +328,12 @@ fn show_cursor(
 fn update_picked_up_piece(
     pick_source: Res<PickSource>,
     currently_picked_up: Res<CurrentPiece>,
-    mut enemy_query: Query<(&mut Transform), With<Tameable>>,
+    mut enemy_query: Query<&mut Transform, With<Tameable>>,
 ) {
     if currently_picked_up.entity.is_none() {
         return;
     }
-    if let Ok((mut transform)) = enemy_query.get_mut(currently_picked_up.entity.unwrap()) {
+    if let Ok(mut transform) = enemy_query.get_mut(currently_picked_up.entity.unwrap()) {
         transform.translation = Vec3::new(
             pick_source.last_cursor_pos.x,
             pick_source.last_cursor_pos.y,
