@@ -14,7 +14,9 @@ default = [
 ]
 
 native = [
-    "bevy/bevy_wgpu"
+    "bevy/bevy_wgpu",
+    "bevy/bevy_audio",
+    "bevy/mp3"
 ]
 
 [dependencies]

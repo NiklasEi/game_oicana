@@ -202,7 +202,7 @@ fn render_map(
     let tower_handle: Handle<Texture> = asset_server.load("tower64x64.png");
     let path_handle: Handle<Texture> = asset_server.load("path64x64.png");
     let castle_handle: Handle<Texture> = asset_server.load("castle64x64.png");
-    let tree_handle: Handle<Texture> = asset_server.load("tree64x64.png");
+    let cloud_handle: Handle<Texture> = asset_server.load("cloud64x64.png");
     let spawn_handle: Handle<Texture> = asset_server.load("spawn.png");
 
     for row in 0..map.height {
@@ -297,7 +297,7 @@ fn render_map(
                 &Tile::Tree => {
                     commands
                         .spawn(SpriteBundle {
-                            material: materials.add(tree_handle.clone().into()),
+                            material: materials.add(cloud_handle.clone().into()),
                             transform: Transform::from_translation(Vec3::new(
                                 column as f32 * map.tile_size,
                                 row as f32 * map.tile_size,
