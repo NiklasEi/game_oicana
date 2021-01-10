@@ -7,6 +7,7 @@ use bevy::ecs::bevy_utils::HashMap;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::{point, FillOptions, LineJoin, PathBuilder, StrokeOptions};
 use std::f32::consts::PI;
+use rand::random;
 
 pub struct PuzzlePlugin;
 
@@ -107,20 +108,20 @@ fn set_tower_puzzles(
             id,
             pieces: [
                 Piece {
-                    color: EnemyColor::Red,
-                    form: EnemyForm::Quadratic,
+                    color: random(),
+                    form: random(),
                 },
                 Piece {
-                    color: EnemyColor::Blue,
-                    form: EnemyForm::Triangle,
+                    color: random(),
+                    form: random(),
                 },
                 Piece {
-                    color: EnemyColor::Blue,
-                    form: EnemyForm::Circle,
+                    color: random(),
+                    form: random(),
                 },
                 Piece {
-                    color: EnemyColor::Red,
-                    form: EnemyForm::Triangle,
+                    color: random(),
+                    form: random(),
                 },
             ],
         };
