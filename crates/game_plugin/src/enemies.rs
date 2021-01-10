@@ -105,9 +105,9 @@ impl EnemyColor {
         match self {
             EnemyColor::Lilac => Color::rgb(84./255., 13./255., 110./255.),
             EnemyColor::Red => Color::rgb(235./255., 66./255., 102./255.),
-            EnemyColor::Green => Color::rgb(96./255., 211./255., 148./255.),
+            EnemyColor::Green => Color::rgb(83./255., 145./255., 126./255.),
             EnemyColor::Pink => Color::rgb(217./255., 154./255., 197./255.),
-            EnemyColor::Blue => Color::rgb(188./255., 237./255., 246./255.),
+            EnemyColor::Blue => Color::rgb(88./255., 84./255., 129./255.),
         }
     }
 }

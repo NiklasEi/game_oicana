@@ -8,7 +8,7 @@ impl Plugin for UiPlugin {
         app.add_resource(GameState {
             health: 20,
             score: 0,
-            enemy_health: 100,
+            enemy_health: 10,
         })
         .add_startup_system(init_life.system())
         .add_system(update_game_state.system())
