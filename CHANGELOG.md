@@ -1,4 +1,6 @@
 <!-- next-header -->
+
+## [1.1.0] - 2021-01-10
 - slightly randomize the enemy health
 - moved all clouds into view
 - add some more tower spots
