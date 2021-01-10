@@ -9,10 +9,13 @@ pub struct TowersPlugin;
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system(spawn_map_tower.system())
+            .add_event::<TowerShot>()
             .add_system(shoot.system())
             .add_system(build_and_upgrade_towers.system());
     }
 }
+
+pub struct TowerShot;
 
 struct Tower {
     range: f32,
@@ -56,6 +59,7 @@ fn shoot(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
+    mut tower_shot: ResMut<Events<TowerShot>>,
     mut enemies_query: Query<(Entity, &Transform, &mut Enemy), Without<Tameable>>,
 ) {
     for (tower_pos, tower, mut timer) in tower_query.iter_mut() {
@@ -92,6 +96,7 @@ fn shoot(
                     &mut materials,
                     &mut meshes,
                 );
+                tower_shot.send(TowerShot);
             }
         }
     }

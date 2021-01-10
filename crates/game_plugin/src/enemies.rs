@@ -16,12 +16,15 @@ impl Plugin for EnemiesPlugin {
         app.add_resource(WaveState {
             last_spawn: Instant::now(),
         })
+        .add_event::<EnemyBreach>()
         .add_system(remove_enemies.system())
         .add_system(spawn_enemies.system())
         .add_system(update_tamable_enemies.system())
         .add_system(update_enemies.system());
     }
 }
+
+pub struct EnemyBreach;
 
 struct WaveState {
     pub last_spawn: Instant,
@@ -53,8 +56,7 @@ impl Enemy {
             return materials.get_handle(handle);
         }
         let health_factor = self.health as f32 / self.max_health as f32;
-        let full_color =
-            Color::GRAY * health_factor * 2. + self.color.to_color() * (1. - health_factor);
+        let full_color = Color::GRAY * health_factor + self.color.to_color() * (1. - health_factor);
 
         let color_handle = materials.add(full_color.into());
         self.color_handle_map.insert(self.health, color_handle.id);
@@ -280,6 +282,7 @@ fn remove_enemies(
     commands: &mut Commands,
     map: Res<Map>,
     mut game_state: ResMut<GameState>,
+    mut enemy_breach: ResMut<Events<EnemyBreach>>,
     mut enemy_query: Query<(Entity, &Enemy), Without<Tameable>>,
 ) {
     for (entity, enemy) in enemy_query.iter() {
@@ -293,6 +296,7 @@ fn remove_enemies(
         if enemy.current_waypoint_index >= map.waypoints.len() {
             if game_state.health > 0 {
                 game_state.health -= 1;
+                enemy_breach.send(EnemyBreach);
             }
             commands.despawn(entity);
             continue;
