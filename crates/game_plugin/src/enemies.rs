@@ -82,14 +82,20 @@ impl Distribution<EnemyForm> for Standard {
 #[derive(Clone, Debug, PartialEq)]
 pub enum EnemyColor {
     Red,
+    Lilac,
+    Green,
     Blue,
+    Pink
 }
 
 impl Distribution<EnemyColor> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> EnemyColor {
-        match rng.gen_range(0..2) {
+        match rng.gen_range(0..4) {
             0 => EnemyColor::Red,
-            _ => EnemyColor::Blue,
+            1 => EnemyColor::Green,
+            2 => EnemyColor::Blue,
+            3 => EnemyColor::Pink,
+            _ => EnemyColor::Lilac,
         }
     }
 }
@@ -97,8 +103,11 @@ impl Distribution<EnemyColor> for Standard {
 impl EnemyColor {
     pub fn to_color(&self) -> Color {
         match self {
-            EnemyColor::Blue => Color::BLUE,
-            EnemyColor::Red => Color::RED,
+            EnemyColor::Lilac => Color::rgb(84./255., 13./255., 110./255.),
+            EnemyColor::Red => Color::rgb(235./255., 66./255., 102./255.),
+            EnemyColor::Green => Color::rgb(96./255., 211./255., 148./255.),
+            EnemyColor::Pink => Color::rgb(217./255., 154./255., 197./255.),
+            EnemyColor::Blue => Color::rgb(188./255., 237./255., 246./255.),
         }
     }
 }

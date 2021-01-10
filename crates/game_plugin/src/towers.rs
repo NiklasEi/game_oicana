@@ -111,7 +111,7 @@ fn build_and_upgrade_towers(
         {
             tower.speed += 20.;
             tower.damage += 5;
-            tower.range += 100.;
+            tower.range += 5.;
         } else {
             commands
                 .spawn((
