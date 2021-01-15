@@ -1583,15 +1583,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "game_plugin"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_prototype_lyon",
- "rand 0.8.1",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2189,16 +2180,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mini_jam_71"
-version = "1.1.1-dev"
-dependencies = [
- "bevy",
- "bevy_webgl2",
- "game_plugin",
- "winit",
-]
-
-[[package]]
 name = "minimp3"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2546,6 +2527,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68ff7a51600eabe34e189eec5c995a62f151d8d97e5fbca39e87ca738bb99b82"
 dependencies = [
  "fetch_unroll",
+]
+
+[[package]]
+name = "oicana"
+version = "1.1.1-dev"
+dependencies = [
+ "bevy",
+ "bevy_webgl2",
+ "oicana_plugin",
+ "winit",
+]
+
+[[package]]
+name = "oicana_plugin"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_prototype_lyon",
+ "rand 0.8.1",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 [package]
-name = "game_plugin"
+name = "oicana_plugin"
 version = "0.1.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"

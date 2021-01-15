@@ -2,7 +2,7 @@
 
 *The game tries to combine the genres `Tower defense`, `Monster tamer` and `Puzzle`. Mini Jam 71 called for a combination of at least two genres*
 
-Oicana [is published on itch.io](https://niklme.itch.io/oicana). You can get the latest builds there or find them in [the releases of this repository](https://github.com/NiklasEi/mini_jam_71/releases).
+Oicana [is published on itch.io](https://niklme.itch.io/oicana). You can get the latest builds there or find them in [the releases of this repository](https://github.com/NiklasEi/oicana/releases).
 
 ## Goal of the game
 

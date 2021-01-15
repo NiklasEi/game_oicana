@@ -1535,7 +1535,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "game_plugin"
+name = "oicana_plugin"
 version = "0.2.1-alpha.0"
 dependencies = [
  "bevy",

@@ -36,26 +36,26 @@ dependencies = ["cargo-build-web", "wasm-bindgen-cli"]
 dependencies = ["cargo-release-web", "wasm-bindgen-cli", "copy-wasm-to-build-dir", "copy-index-to-build-dir", "copy-assets-to-build-dir"]
 
 [tasks.copy-wasm-to-build-dir]
-args = ["target/wasm32-unknown-unknown/release/mini_jam_71.wasm", "mini_jam_71_web/target/"]
+args = ["target/wasm32-unknown-unknown/release/oicana.wasm", "oicana_web/target/"]
 command = "cp"
 dependencies = ["create-build-dir"]
 
 [tasks.copy-assets-to-build-dir]
-args = ["-r", "assets", "mini_jam_71_web"]
+args = ["-r", "assets", "oicana_web"]
 command = "cp"
 dependencies = ["create-build-dir"]
 
 [tasks.copy-index-to-build-dir]
-args = ["index.html", "mini_jam_71_web/"]
+args = ["index.html", "oicana_web/"]
 command = "cp"
 dependencies = ["create-build-dir"]
 
 [tasks.create-build-dir]
-args = ["-p", "mini_jam_71_web/target"]
+args = ["-p", "oicana_web/target"]
 command = "mkdir"
 
 [tasks.release-web]
-args = ["--out-dir", "mini_jam_71_web/target/", "--out-name", "wasm", "--target", "web", "--no-typescript", "mini_jam_71_web/target/mini_jam_71.wasm"]
+args = ["--out-dir", "oicana_web/target/", "--out-name", "wasm", "--target", "web", "--no-typescript", "oicana_web/target/oicana.wasm"]
 command = "wasm-bindgen"
 dependencies = ["prepare-release-web"]
 

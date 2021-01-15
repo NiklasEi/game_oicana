@@ -24,17 +24,17 @@ jobs:
       - name: Build and release
         run: |
           cargo build --release --features native
-          mkdir -p mini_jam_71.app/Contents/MacOS
-          cp -r assets/ mini_jam_71.app/Contents/MacOS/
-          cp target/release/mini_jam_71 mini_jam_71.app/Contents/MacOS/
-          strip mini_jam_71.app/Contents/MacOS/mini_jam_71
-          hdiutil create -fs HFS+ -volname "mini_jam_71" -srcfolder mini_jam_71.app mini_jam_71.dmg
+          mkdir -p oicana.app/Contents/MacOS
+          cp -r assets/ oicana.app/Contents/MacOS/
+          cp target/release/oicana oicana.app/Contents/MacOS/
+          strip oicana.app/Contents/MacOS/oicana
+          hdiutil create -fs HFS+ -volname "oicana" -srcfolder oicana.app oicana.dmg
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: mini_jam_71.dmg
-          asset_name: mini_jam_71_macOS_${{ steps.get_version.outputs.version }}.dmg
+          file: oicana.dmg
+          asset_name: oicana_macOS_${{ steps.get_version.outputs.version }}.dmg
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -55,20 +55,20 @@ jobs:
       - name: Build and release
         run: |
           cargo build --release --features native
-          strip target/release/mini_jam_71
+          strip target/release/oicana
       - name: Prepare assets
         run: |
           mkdir target/release/assets && cp -r assets target/release/assets
       - uses: papeloto/action-zip@v1
         with:
-          files: target/release/assets/ target/release/mini_jam_71
-          dest: mini_jam_71_linux.zip
+          files: target/release/assets/ target/release/oicana
+          dest: oicana_linux.zip
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: mini_jam_71_linux.zip
-          asset_name: mini_jam_71_linux_${{ steps.get_version.outputs.version }}.zip
+          file: oicana_linux.zip
+          asset_name: oicana_linux_${{ steps.get_version.outputs.version }}.zip
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -92,14 +92,14 @@ jobs:
           mkdir target/release/assets && cp -r assets target/release/assets
       - uses: papeloto/action-zip@v1
         with:
-          files: target/release/assets/ target/release/mini_jam_71.exe
-          dest: mini_jam_71_windows.zip
+          files: target/release/assets/ target/release/oicana.exe
+          dest: oicana_windows.zip
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: mini_jam_71_windows.zip
-          asset_name: mini_jam_71_windows_${{ steps.get_version.outputs.version }}.zip
+          file: oicana_windows.zip
+          asset_name: oicana_windows_${{ steps.get_version.outputs.version }}.zip
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -128,13 +128,13 @@ jobs:
           cargo make release-web
       - uses: papeloto/action-zip@v1
         with:
-          files: mini_jam_71_web
-          dest: mini_jam_71_web.zip
+          files: oicana_web
+          dest: oicana_web.zip
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: mini_jam_71_web.zip
-          asset_name: mini_jam_71_web_${{ steps.get_version.outputs.version }}.zip
+          file: oicana_web.zip
+          asset_name: oicana_web_${{ steps.get_version.outputs.version }}.zip
           tag: ${{ github.ref }}
           overwrite: true

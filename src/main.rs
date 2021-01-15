@@ -2,7 +2,7 @@
 #![windows_subsystem = "windows"]
 
 use bevy::prelude::*;
-use game_plugin::GamePlugin;
+use oicana_plugin::GamePlugin;
 
 #[cfg(target_arch = "wasm32")]
 use bevy_webgl2;
@@ -17,7 +17,7 @@ fn main() {
         .add_resource(WindowDescriptor {
             width: 800.,
             height: 600.,
-            title: "Oicana | Mini Jam 71".to_string(),
+            title: "Oicana".to_string(),
             ..Default::default()
         })
         .add_plugins(DefaultPlugins);
