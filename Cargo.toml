@@ -1,6 +1,6 @@
 [package]
 name = "oicana"
-version = "1.1.1-dev"
+version = "1.2.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"
 publish = false
