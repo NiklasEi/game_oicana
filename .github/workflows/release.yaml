@@ -13,9 +13,9 @@ jobs:
     runs-on: macOS-latest
 
     steps:
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -34,7 +34,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: oicana.dmg
-          asset_name: oicana_macOS_${{ steps.get_version.outputs.version }}.dmg
+          asset_name: oicana_macOS_${{ steps.tag.outputs.tag }}.dmg
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -42,9 +42,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -68,7 +68,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: oicana_linux.zip
-          asset_name: oicana_linux_${{ steps.get_version.outputs.version }}.zip
+          asset_name: oicana_linux_${{ steps.tag.outputs.tag }}.zip
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -76,9 +76,9 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Get the version
-        id: get_version
-        run: echo "::set-output name=version::${GITHUB_REF#refs/tags/}"
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -99,7 +99,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: oicana_windows.zip
-          asset_name: oicana_windows_${{ steps.get_version.outputs.version }}.zip
+          asset_name: oicana_windows_${{ steps.tag.outputs.tag }}.zip
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -107,9 +107,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -135,6 +135,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: oicana_web.zip
-          asset_name: oicana_web_${{ steps.get_version.outputs.version }}.zip
+          asset_name: oicana_web_${{ steps.tag.outputs.tag }}.zip
           tag: ${{ github.ref }}
           overwrite: true

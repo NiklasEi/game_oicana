@@ -1,6 +1,7 @@
 <!-- next-header -->
 
 ## [1.2.0] - 2021-01-15
+- rename executables and cargo packages
 
 ## [1.1.0] - 2021-01-10
 - slightly randomize the enemy health
