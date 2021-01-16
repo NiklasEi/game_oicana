@@ -1,5 +1,7 @@
 <!-- next-header -->
 
+## [1.3.0] - 2021-01-16
+
 ## [1.2.0] - 2021-01-15
 - rename executables and cargo packages
 
