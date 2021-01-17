@@ -8,7 +8,7 @@ mod towers;
 mod ui;
 
 #[cfg(feature = "native")]
-use crate::audio::AudioPlugin;
+use crate::audio::InternalAudioPlugin;
 use crate::bullets::BulletPlugin;
 use crate::enemies::EnemiesPlugin;
 use crate::map::MapPlugin;
@@ -40,7 +40,7 @@ impl Plugin for GamePlugin {
             .add_plugin(UiPlugin)
             .add_plugin(PuzzlePlugin);
         #[cfg(feature = "native")]
-        app.add_plugin(AudioPlugin);
+        app.add_plugin(InternalAudioPlugin);
         app.on_state_enter(STAGE, AppState::Menu, switch_to_game.system());
     }
 }

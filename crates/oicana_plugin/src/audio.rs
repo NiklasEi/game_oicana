@@ -1,13 +1,18 @@
 use crate::enemies::EnemyBreach;
 use crate::towers::TowerShot;
 use crate::{AppState, STAGE};
-use bevy::prelude::*;
+use bevy::prelude::{
+    AppBuilder, AssetServer, EventReader, Events, Handle, IntoSystem, Local, Plugin, Res, ResMut,
+    Time, Timer,
+};
+use bevy_improved_audio::{Audio, AudioPlugin, AudioSource};
 
-pub struct AudioPlugin;
+pub struct InternalAudioPlugin;
 
-impl Plugin for AudioPlugin {
+impl Plugin for InternalAudioPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(BackgroundTimer::from_seconds(3. * 60., true))
+        app.add_plugin(AudioPlugin)
+            .add_resource(BackgroundTimer::from_seconds(3. * 60., true))
             .on_state_enter(STAGE, AppState::InGame, start_background.system())
             .on_state_update(STAGE, AppState::InGame, tower_shots.system())
             .on_state_update(STAGE, AppState::InGame, enemy_breach.system())
@@ -19,7 +24,7 @@ impl Plugin for AudioPlugin {
 type BackgroundTimer = Timer;
 
 fn start_background(asset_server: Res<AssetServer>, audio: Res<Audio>) {
-    let music = asset_server.load("sounds/background.mp3");
+    let music: Handle<AudioSource> = asset_server.load("sounds/background.mp3");
     audio.play(music);
 }
 

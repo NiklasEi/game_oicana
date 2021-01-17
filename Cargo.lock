@@ -299,22 +299,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_audio"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2db6b28a59a8941872cefab577544fcc296cfe593ce1c466c572fb22797e526"
-dependencies = [
- "anyhow",
- "bevy_app",
- "bevy_asset",
- "bevy_ecs",
- "bevy_reflect",
- "bevy_utils",
- "parking_lot",
- "rodio",
-]
-
-[[package]]
 name = "bevy_core"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -409,6 +393,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_improved_audio"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bevy",
+ "parking_lot",
+ "rodio",
+]
+
+[[package]]
 name = "bevy_input"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -428,7 +422,6 @@ checksum = "ad383825249f68405bd143d88194fda471ad017baf5c3240870c8c38dad8d47f"
 dependencies = [
  "bevy_app",
  "bevy_asset",
- "bevy_audio",
  "bevy_core",
  "bevy_derive",
  "bevy_diagnostic",
@@ -2555,6 +2548,7 @@ name = "oicana_plugin"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_improved_audio",
  "bevy_prototype_lyon",
  "rand 0.8.1",
 ]
