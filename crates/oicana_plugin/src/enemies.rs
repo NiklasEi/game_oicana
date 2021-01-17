@@ -1,6 +1,7 @@
 use crate::map::{Coordinate, Map};
 use crate::puzzle::CurrentPiece;
 use crate::ui::GameState;
+use crate::{AppState, STAGE};
 use bevy::asset::HandleId;
 use bevy::prelude::*;
 use bevy::utils::{HashMap, Instant};
@@ -17,10 +18,11 @@ impl Plugin for EnemiesPlugin {
             last_spawn: Instant::now(),
         })
         .add_event::<EnemyBreach>()
-        .add_system(remove_enemies.system())
-        .add_system(spawn_enemies.system())
-        .add_system(update_tamable_enemies.system())
-        .add_system(update_enemies.system());
+        .on_state_update(STAGE, AppState::InGame, remove_enemies.system())
+        .on_state_update(STAGE, AppState::InGame, spawn_enemies.system())
+        .on_state_update(STAGE, AppState::InGame, update_tamable_enemies.system())
+        .on_state_update(STAGE, AppState::InGame, update_enemies.system())
+        .on_state_exit(STAGE, AppState::InGame, break_down_enemies.system());
     }
 }
 
@@ -372,5 +374,11 @@ fn update_tamable_enemies(
         } else {
             commands.despawn(entity);
         }
+    }
+}
+
+fn break_down_enemies(commands: &mut Commands, enemies_query: Query<Entity, With<Enemy>>) {
+    for entity in enemies_query.iter() {
+        commands.despawn(entity);
     }
 }

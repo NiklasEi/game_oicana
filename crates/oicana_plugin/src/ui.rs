@@ -1,3 +1,4 @@
+use crate::{AppState, STAGE};
 use bevy::prelude::*;
 
 pub struct UiPlugin;
@@ -6,10 +7,10 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(GameState::default())
             .init_resource::<ButtonMaterials>()
-            .add_startup_system(init_life.system())
-            .add_system(update_game_state.system())
-            .add_system(retry_system.system())
-            .add_system(click_retry_button.system());
+            .on_state_enter(STAGE, AppState::InGame, init_life.system())
+            .on_state_update(STAGE, AppState::InGame, update_game_state.system())
+            .on_state_update(STAGE, AppState::InGame, retry_system.system())
+            .on_state_update(STAGE, AppState::InGame, click_retry_button.system());
     }
 }
 
@@ -180,6 +181,7 @@ fn retry_system(
 fn click_retry_button(
     commands: &mut Commands,
     button_materials: Res<ButtonMaterials>,
+    mut state: ResMut<State<AppState>>,
     mut game_state: ResMut<GameState>,
     mut interaction_query: Query<
         (Entity, &Interaction, &mut Handle<ColorMaterial>, &Children),
@@ -194,6 +196,7 @@ fn click_retry_button(
                 *game_state = GameState::default();
                 commands.despawn(button);
                 commands.despawn(text);
+                state.set_next(AppState::Menu).unwrap();
             }
             Interaction::Hovered => {
                 *material = button_materials.hovered.clone();

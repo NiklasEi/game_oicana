@@ -1,4 +1,5 @@
 use crate::enemies::Trees;
+use crate::{AppState, STAGE};
 use bevy::prelude::*;
 
 pub struct MapPlugin;
@@ -8,8 +9,9 @@ impl Plugin for MapPlugin {
         let map = Map::load_map();
         app.add_resource(map.gather_trees())
             .add_resource(map)
-            .add_startup_system(render_map.system())
-            .add_startup_system(setup_camera.system());
+            .on_state_enter(STAGE, AppState::InGame, render_map.system())
+            .on_state_enter(STAGE, AppState::InGame, setup_camera.system())
+            .on_state_exit(STAGE, AppState::InGame, break_down_map.system());
     }
 }
 
@@ -330,5 +332,11 @@ fn render_map(
                 }
             }
         }
+    }
+}
+
+fn break_down_map(commands: &mut Commands, tile_query: Query<Entity, With<Tile>>) {
+    for entity in tile_query.iter() {
+        commands.despawn(entity);
     }
 }

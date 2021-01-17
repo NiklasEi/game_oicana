@@ -3,6 +3,7 @@ use crate::enemies::{
     Tameable,
 };
 use crate::map::{Coordinate, Map, Tile};
+use crate::{AppState, STAGE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::{point, FillOptions, LineJoin, PathBuilder, StrokeOptions};
 use rand::random;
@@ -23,11 +24,12 @@ impl Plugin for PuzzlePlugin {
             })
             .add_event::<CompletePuzzle>()
             .add_resource(Puzzles { towers: vec![] })
-            .add_startup_system(set_tower_puzzles.system())
-            .add_system(pick_up_piece.system()) /*.add_system(show_cursor.system())*/
-            .add_system(update_picked_up_piece.system())
-            .add_system(update_puzzle_slots.system())
-            .add_system(update_puzzle.system());
+            .on_state_enter(STAGE, AppState::InGame, set_tower_puzzles.system())
+            .on_state_update(STAGE, AppState::InGame, pick_up_piece.system())
+            .on_state_update(STAGE, AppState::InGame, update_picked_up_piece.system())
+            .on_state_update(STAGE, AppState::InGame, update_puzzle_slots.system())
+            .on_state_update(STAGE, AppState::InGame, update_puzzle.system())
+            .on_state_exit(STAGE, AppState::InGame, break_down_puzzles.system());
     }
 }
 
@@ -373,5 +375,11 @@ fn update_puzzle(
             &mut materials,
         );
         puzzles.towers.push(puzzle);
+    }
+}
+
+fn break_down_puzzles(commands: &mut Commands, puzzle_slot_query: Query<Entity, With<PuzzleSlot>>) {
+    for entity in puzzle_slot_query.iter() {
+        commands.despawn(entity);
     }
 }

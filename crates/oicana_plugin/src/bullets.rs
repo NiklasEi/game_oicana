@@ -1,4 +1,5 @@
 use crate::enemies::{Enemy, Tameable};
+use crate::{AppState, STAGE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use std::f32::consts::PI;
@@ -7,7 +8,8 @@ pub struct BulletPlugin;
 
 impl Plugin for BulletPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(update_bullets.system());
+        app.on_state_update(STAGE, AppState::InGame, update_bullets.system())
+            .on_state_exit(STAGE, AppState::InGame, break_down_bullets.system());
     }
 }
 
@@ -59,4 +61,10 @@ pub fn spawn_bullet(
             &FillOptions::default(),
         ))
         .with(bullet);
+}
+
+fn break_down_bullets(commands: &mut Commands, bullets_query: Query<Entity, With<Bullet>>) {
+    for entity in bullets_query.iter() {
+        commands.despawn(entity);
+    }
 }

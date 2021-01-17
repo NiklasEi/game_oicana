@@ -1,5 +1,6 @@
 use crate::enemies::EnemyBreach;
 use crate::towers::TowerShot;
+use crate::{AppState, STAGE};
 use bevy::prelude::*;
 
 pub struct AudioPlugin;
@@ -7,10 +8,11 @@ pub struct AudioPlugin;
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(BackgroundTimer::from_seconds(3. * 60., true))
-            .add_startup_system(start_background.system())
-            .add_system(tower_shots.system())
-            .add_system(enemy_breach.system())
-            .add_system(background.system());
+            .on_state_enter(STAGE, AppState::InGame, start_background.system())
+            .on_state_update(STAGE, AppState::InGame, tower_shots.system())
+            .on_state_update(STAGE, AppState::InGame, enemy_breach.system())
+            .on_state_update(STAGE, AppState::InGame, background.system())
+            .on_state_exit(STAGE, AppState::InGame, break_down_audio.system());
     }
 }
 
@@ -56,4 +58,8 @@ fn enemy_breach(
         let music = asset_server.load("sounds/enemybreach.mp3");
         audio.play(music);
     }
+}
+
+fn break_down_audio() {
+    // ToDo: stop the music
 }

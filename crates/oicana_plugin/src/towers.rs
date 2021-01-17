@@ -2,16 +2,18 @@ use crate::bullets::{spawn_bullet, Bullet};
 use crate::enemies::{Enemy, Tameable};
 use crate::map::{Coordinate, Map, MapTile, Tile};
 use crate::puzzle::CompletePuzzle;
+use crate::{AppState, STAGE};
 use bevy::prelude::*;
 
 pub struct TowersPlugin;
 
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_startup_system(spawn_map_tower.system())
-            .add_event::<TowerShot>()
-            .add_system(shoot.system())
-            .add_system(build_and_upgrade_towers.system());
+        app.add_event::<TowerShot>()
+            .on_state_enter(STAGE, AppState::InGame, spawn_map_tower.system())
+            .on_state_update(STAGE, AppState::InGame, shoot.system())
+            .on_state_update(STAGE, AppState::InGame, build_and_upgrade_towers.system())
+            .on_state_exit(STAGE, AppState::InGame, break_down_towers.system());
     }
 }
 
@@ -147,5 +149,11 @@ fn build_and_upgrade_towers(
                 ))
                 .with(Timer::from_seconds(0.3, true));
         }
+    }
+}
+
+fn break_down_towers(commands: &mut Commands, tower_query: Query<Entity, With<Tower>>) {
+    for entity in tower_query.iter() {
+        commands.despawn(entity);
     }
 }
