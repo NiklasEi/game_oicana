@@ -18,6 +18,7 @@ impl Plugin for TowersPlugin {
 pub struct TowerShot;
 
 struct Tower {
+    level: usize,
     range: f32,
     damage: i32,
     speed: f32,
@@ -44,6 +45,7 @@ fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
                 Tower {
                     range: 100.,
                     damage: 15,
+                    level: 1,
                     speed: 200.,
                     coordinate: coordinate.clone(),
                 },
@@ -108,18 +110,21 @@ fn build_and_upgrade_towers(
     completed_puzzle: Res<Events<CompletePuzzle>>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut tower_query: Query<&mut Tower>,
+    mut tower_query: Query<(&mut Tower, &mut Timer)>,
     mut map_tiles_query: Query<(&Transform, &mut Handle<ColorMaterial>), With<MapTile>>,
 ) {
     for completed_puzzle in event_reader.iter(&completed_puzzle) {
         let coordinate: Coordinate = completed_puzzle.coordinate.clone();
-        if let Some(mut tower) = tower_query
+        if let Some((mut tower, mut timer)) = tower_query
             .iter_mut()
-            .find(|tower| tower.coordinate == coordinate)
+            .find(|(tower, _timer)| tower.coordinate == coordinate)
         {
+            tower.level += 1;
             tower.speed += 20.;
             tower.damage += 5;
             tower.range += 5.;
+
+            *timer = Timer::from_seconds(if tower.level == 2 { 0.2 } else { 0.1 }, true);
         } else {
             let tower_handle: Handle<Texture> = asset_server.load("tower64x64.png");
             for (transform, mut material) in map_tiles_query.iter_mut() {
@@ -134,6 +139,7 @@ fn build_and_upgrade_towers(
                     Tower {
                         range: 100.,
                         damage: 15,
+                        level: 1,
                         speed: 200.,
                         coordinate: coordinate.clone(),
                     },
