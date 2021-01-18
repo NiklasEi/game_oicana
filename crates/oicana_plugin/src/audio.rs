@@ -23,9 +23,9 @@ impl Plugin for InternalAudioPlugin {
 
 type BackgroundTimer = Timer;
 
-fn start_background(asset_server: Res<AssetServer>, audio: Res<Audio>) {
+fn start_background(asset_server: Res<AssetServer>, audio: Res<Audio<AudioSource>>) {
     let music: Handle<AudioSource> = asset_server.load("sounds/background.mp3");
-    audio.play(music);
+    audio.play_controlled(music, "background".to_owned());
 }
 
 fn tower_shots(
@@ -49,7 +49,7 @@ fn background(
     timer.tick(time.delta_seconds());
     if timer.just_finished() {
         let music = asset_server.load("sounds/background.mp3");
-        audio.play(music);
+        audio.play_controlled(music, "background".to_owned());
     }
 }
 
@@ -60,11 +60,11 @@ fn enemy_breach(
     audio: Res<Audio>,
 ) {
     if enemy_breach_reader.latest(&enemy_breach).is_some() {
-        let music = asset_server.load("sounds/enemybreach.mp3");
+        let music: Handle<AudioSource> = asset_server.load("sounds/enemybreach.mp3");
         audio.play(music);
     }
 }
 
-fn break_down_audio() {
-    // ToDo: stop the music
+fn break_down_audio(audio: Res<Audio>) {
+    audio.pause("background".to_owned());
 }
