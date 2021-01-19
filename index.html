@@ -23,11 +23,14 @@
     </style>
     <title>Mini Jam 71</title>
 </head>
-<script type="module">
-    import init from './target/wasm.js'
-    init()
-</script>
-<script>
-    // document.addEventListener('contextmenu', event => event.preventDefault());
-</script>
+<body><div id="trigger"></div></body>
+<footer>
+    <script type="module">
+        import init from './target/wasm.js'
+        let button = document.createElement('button');
+        button.onclick= function() {init();}
+
+        document.getElementById("trigger").appendChild(button);
+    </script>
+</footer>
 </html>

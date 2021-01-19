@@ -20,7 +20,8 @@ native = [
 ]
 
 web = [
-    "bevy_webgl2"
+    "bevy_webgl2",
+    "oicana_plugin/web"
 ]
 
 [dependencies]

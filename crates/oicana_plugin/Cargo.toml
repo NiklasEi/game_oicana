@@ -10,12 +10,16 @@ default = [
     "bevy/bevy_gltf",
     "bevy/bevy_winit",
     "bevy/render",
-    "bevy/png"
+    "bevy/png",
+    "bevy_improved_audio/vorbis"
 ]
 
 native = [
-    "bevy/bevy_wgpu",
-    "bevy_improved_audio/mp3"
+    "bevy/bevy_wgpu"
+]
+
+web = [
+    "bevy_improved_audio/wasm"
 ]
 
 [dependencies]
