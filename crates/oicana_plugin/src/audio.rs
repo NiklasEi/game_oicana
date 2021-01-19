@@ -25,7 +25,7 @@ type BackgroundTimer = Timer;
 
 fn start_background(asset_server: Res<AssetServer>, audio: Res<Audio<AudioSource>>) {
     let music: Handle<AudioSource> = asset_server.load("sounds/background.mp3");
-    audio.play_controlled(music, "background".to_owned());
+    audio.play_in_channel(music, "background".to_owned());
 }
 
 fn tower_shots(
@@ -49,7 +49,7 @@ fn background(
     timer.tick(time.delta_seconds());
     if timer.just_finished() {
         let music = asset_server.load("sounds/background.mp3");
-        audio.play_controlled(music, "background".to_owned());
+        audio.play_in_channel(music, "background".to_owned());
     }
 }
 
@@ -66,5 +66,5 @@ fn enemy_breach(
 }
 
 fn break_down_audio(audio: Res<Audio>) {
-    audio.pause("background".to_owned());
+    audio.drop_channel("background".to_owned());
 }
