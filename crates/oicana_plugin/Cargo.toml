@@ -11,19 +11,15 @@ default = [
     "bevy/bevy_winit",
     "bevy/render",
     "bevy/png",
-    "bevy_improved_audio/vorbis"
+    "kira/ogg"
 ]
 
 native = [
     "bevy/bevy_wgpu"
 ]
 
-web = [
-    "bevy_improved_audio/wasm"
-]
-
 [dependencies]
 bevy = {version="0.4.0", default-features=false}
-bevy_improved_audio = { path = "../../../bevy_improved_audio" }
+kira = {git = "https://github.com/NiklasEi/kira.git", branch="main", default-features = false}
 bevy_prototype_lyon = "0.1.5"
 rand = "0.8.1"

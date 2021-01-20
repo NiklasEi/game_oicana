@@ -44,9 +44,9 @@ pub struct GameState {
 impl Default for GameState {
     fn default() -> Self {
         GameState {
-            health: 20,
+            health: 1,
             score: 0,
-            enemy_health: 1,
+            enemy_health: 1000,
         }
     }
 }
