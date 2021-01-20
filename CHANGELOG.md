@@ -1,6 +1,9 @@
 <!-- next-header -->
+- retry button
 
 ## [1.3.0] - 2021-01-16
+- add executable icon in windows
+- make towers shoot faster in higher levels
 
 ## [1.2.0] - 2021-01-15
 - rename executables and cargo packages

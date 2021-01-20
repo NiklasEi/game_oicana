@@ -1,3 +1,4 @@
+#[cfg(feature = "native")]
 mod audio;
 mod bullets;
 mod enemies;
@@ -6,6 +7,7 @@ mod puzzle;
 mod towers;
 mod ui;
 
+#[cfg(feature = "native")]
 use crate::audio::InternalAudioPlugin;
 use crate::bullets::BulletPlugin;
 use crate::enemies::EnemiesPlugin;
@@ -37,6 +39,7 @@ impl Plugin for GamePlugin {
             .add_plugin(BulletPlugin)
             .add_plugin(UiPlugin)
             .add_plugin(PuzzlePlugin);
+        #[cfg(feature = "native")]
         app.add_plugin(InternalAudioPlugin);
         app.on_state_enter(STAGE, AppState::Menu, switch_to_game.system());
     }

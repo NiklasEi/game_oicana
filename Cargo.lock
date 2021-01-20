@@ -395,6 +395,7 @@ dependencies = [
 [[package]]
 name = "bevy_improved_audio"
 version = "0.1.0"
+source = "git+https://github.com/NiklasEi/bevy_improved_audio.git#53f6b83dbac8250261f2a8cb56c37cd6576a862f"
 dependencies = [
  "anyhow",
  "bevy",
@@ -2878,7 +2879,7 @@ checksum = "cabe4fa914dec5870285fa7f71f602645da47c486e68486d2b4ceb4a343e90ac"
 [[package]]
 name = "rodio"
 version = "0.13.0"
-source = "git+https://github.com/RustAudio/rodio.git#e1aea73ba0f7c93a4b38dfe5bf05f2337badfe21"
+source = "git+https://github.com/NiklasEi/rodio.git#e1aea73ba0f7c93a4b38dfe5bf05f2337badfe21"
 dependencies = [
  "cpal",
  "lewton",
