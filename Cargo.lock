@@ -2536,7 +2536,7 @@ dependencies = [
 
 [[package]]
 name = "oicana"
-version = "1.4.0"
+version = "1.4.1-dev"
 dependencies = [
  "bevy",
  "bevy_webgl2",
