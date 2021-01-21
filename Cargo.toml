@@ -1,5 +1,6 @@
 [package]
 name = "oicana"
+description = "A tower-defense game with some puzzle aspects"
 version = "1.4.1-dev"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2018"
@@ -32,3 +33,10 @@ oicana_plugin = { path = "crates/oicana_plugin", version = "0.1.0" }
 
 [build-dependencies]
 embed-resource = "1.4"
+
+[package.metadata.bundle]
+name = "Oicana"
+identifier = "dev.nikl.oicana"
+icon = ["build/*.png"]
+resources = ["assets"]
+short_description = "A tower-defense game with some puzzle aspects"
