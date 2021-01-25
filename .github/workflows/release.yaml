@@ -24,11 +24,11 @@ jobs:
       - name: Build and release
         run: |
           cargo build --release --features native
-          mkdir -p oicana.app/Contents/MacOS
-          cp -r assets/ oicana.app/Contents/MacOS/
-          cp target/release/oicana oicana.app/Contents/MacOS/
-          strip oicana.app/Contents/MacOS/oicana
-          hdiutil create -fs HFS+ -volname "oicana" -srcfolder oicana.app oicana.dmg
+          mkdir -p build/macos/Oicana.app/Contents/MacOS/assets
+          cp -r assets/ build/macos/Oicana.app/Contents/MacOS/assets
+          cp target/release/oicana build/macos/Oicana.app/Contents/MacOS/
+          strip build/macos/Oicana.app/Contents/MacOS/oicana
+          hdiutil create -fs HFS+ -volname "Oicana" -srcfolder build/macos oicana.dmg
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
