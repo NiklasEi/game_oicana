@@ -402,6 +402,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_improved_audio"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bevy",
+ "bevy_reflect",
+ "kira",
+ "minimp3",
+ "parking_lot",
+]
+
+[[package]]
 name = "bevy_input"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2044,14 +2056,14 @@ dependencies = [
 
 [[package]]
 name = "kira"
-version = "0.3.0"
-source = "git+https://github.com/NiklasEi/kira.git?branch=main#3fabfca90cc2ed2d01a9fe9f752c29a78cd7a41e"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23c659a19ab422057dfe28571ef52876e9ac857ac1adf9c867b49768a81d27d9"
 dependencies = [
  "atomic",
  "cpal",
  "flume",
  "indexmap",
- "lewton",
  "nanorand",
  "thiserror",
  "uuid",
@@ -2068,17 +2080,6 @@ name = "lazycell"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
-
-[[package]]
-name = "lewton"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be42bea7971f4ba0ea1e215730c29bc1ff9bd2a9c10013912f42a8dcf8d77c0d"
-dependencies = [
- "byteorder",
- "ogg",
- "tinyvec 0.3.4",
-]
 
 [[package]]
 name = "libc"
@@ -2235,6 +2236,26 @@ dependencies = [
  "foreign-types",
  "log",
  "objc",
+]
+
+[[package]]
+name = "minimp3"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "985438f75febf74c392071a975a29641b420dd84431135a6e6db721de4b74372"
+dependencies = [
+ "minimp3-sys",
+ "slice-deque",
+ "thiserror",
+]
+
+[[package]]
+name = "minimp3-sys"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e21c73734c69dc95696c9ed8926a2b393171d98b3f5f5935686a26a487ab9b90"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -2577,15 +2598,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ogg"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13e571c3517af9e1729d4c63571a27edd660ade0667973bfc74a67c660c2b651"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
 name = "oicana"
 version = "1.3.1-dev"
 dependencies = [
@@ -2601,8 +2613,8 @@ name = "oicana_plugin"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_improved_audio",
  "bevy_prototype_lyon",
- "kira",
  "rand 0.8.1",
 ]
 
@@ -3142,6 +3154,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
 
 [[package]]
+name = "slice-deque"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31ef6ee280cdefba6d2d0b4b78a84a1c1a3f3a4cec98c2d4231c8bc225de0f25"
+dependencies = [
+ "libc",
+ "mach",
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "smallvec"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3422,12 +3445,6 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "238ce071d267c5710f9d31451efec16c5ee22de34df17cc05e56cbc92e967117"
-
-[[package]]
-name = "tinyvec"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ccf8dbc19eb42fba10e8feaaec282fb50e2c14b2726d6301dbfeed0f73306a6f"
@@ -3569,7 +3586,7 @@ version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a13e63ab62dbe32aeee58d1c5408d35c36c392bba5d9d3142287219721afe606"
 dependencies = [
- "tinyvec 1.1.0",
+ "tinyvec",
 ]
 
 [[package]]
