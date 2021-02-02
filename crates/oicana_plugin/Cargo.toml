@@ -10,20 +10,16 @@ default = [
     "bevy/bevy_gltf",
     "bevy/bevy_winit",
     "bevy/render",
-    "bevy/png",
-    "bevy_improved_audio/vorbis"
+    "bevy/png"
 ]
 
 native = [
     "bevy/bevy_wgpu"
 ]
 
-web = [
-    "bevy_improved_audio/wasm"
-]
-
 [dependencies]
 bevy = {version="0.4.0", default-features=false}
-bevy_improved_audio = { git="https://github.com/NiklasEi/bevy_improved_audio.git" }
+# bevy_improved_audio = {path="../../../bevy_improved_audio"}
+bevy_improved_audio = { git="https://github.com/NiklasEi/bevy_kira_audio.git" }
 bevy_prototype_lyon = "0.1.5"
 rand = "0.8.1"
