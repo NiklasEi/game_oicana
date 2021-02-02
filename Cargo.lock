@@ -404,6 +404,7 @@ dependencies = [
 [[package]]
 name = "bevy_improved_audio"
 version = "0.1.0"
+source = "git+https://github.com/NiklasEi/bevy_improved_audio.git#53f6b83dbac8250261f2a8cb56c37cd6576a862f"
 dependencies = [
  "anyhow",
  "bevy",
@@ -2599,7 +2600,7 @@ dependencies = [
 
 [[package]]
 name = "oicana"
-version = "1.3.1-dev"
+version = "1.4.1-dev"
 dependencies = [
  "bevy",
  "bevy_webgl2",

@@ -27,10 +27,7 @@
 <footer>
     <script type="module">
         import init from './target/wasm.js'
-        let button = document.createElement('button');
-        button.onclick= function() {init();}
-
-        document.getElementById("trigger").appendChild(button);
+        init();
     </script>
 </footer>
 </html>

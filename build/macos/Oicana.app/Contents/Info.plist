@@ -20,7 +20,7 @@
         <string>APPL</string>
         <key>CFBundleShortVersionString</key>
         <!-- Version -->
-        <string>1.3.0</string>
+        <string>1.4.0</string>
         <key>CFBundleSupportedPlatforms</key>
         <array>
             <string>MacOSX</string>
