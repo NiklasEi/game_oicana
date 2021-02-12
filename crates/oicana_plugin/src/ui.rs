@@ -196,7 +196,7 @@ fn click_retry_button(
                 *game_state = GameState::default();
                 commands.despawn(button);
                 commands.despawn(text);
-                state.set_next(AppState::Menu).unwrap();
+                state.set_next(AppState::Restart).unwrap();
             }
             Interaction::Hovered => {
                 *material = button_materials.hovered.clone();

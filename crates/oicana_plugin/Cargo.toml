@@ -10,7 +10,8 @@ default = [
     "bevy/bevy_gltf",
     "bevy/bevy_winit",
     "bevy/render",
-    "bevy/png"
+    "bevy/png",
+    "bevy_improved_audio/mp3"
 ]
 
 native = [

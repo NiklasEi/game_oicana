@@ -2,6 +2,7 @@
 mod audio;
 mod bullets;
 mod enemies;
+mod loading;
 mod map;
 mod puzzle;
 mod towers;
@@ -11,6 +12,7 @@ mod ui;
 use crate::audio::InternalAudioPlugin;
 use crate::bullets::BulletPlugin;
 use crate::enemies::EnemiesPlugin;
+use crate::loading::LoadingPlugin;
 use crate::map::MapPlugin;
 use crate::puzzle::PuzzlePlugin;
 use crate::towers::TowersPlugin;
@@ -20,19 +22,21 @@ use bevy::prelude::*;
 
 pub struct GamePlugin;
 
-const STAGE: &str = "stage";
+const STAGE: &str = "oicana_stage";
 
 #[derive(Clone)]
 pub enum AppState {
-    Menu,
+    Restart,
     InGame,
+    Loading,
 }
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_resource(ClearColor(Color::BLACK))
-            .add_resource(State::new(AppState::InGame))
+            .add_resource(State::new(AppState::Loading))
             .add_stage_after(stage::UPDATE, STAGE, StateStage::<AppState>::default())
+            .add_plugin(LoadingPlugin)
             .add_plugin(MapPlugin)
             .add_plugin(EnemiesPlugin)
             .add_plugin(TowersPlugin)
@@ -41,7 +45,7 @@ impl Plugin for GamePlugin {
             .add_plugin(PuzzlePlugin);
         #[cfg(feature = "native")]
         app.add_plugin(InternalAudioPlugin);
-        app.on_state_enter(STAGE, AppState::Menu, switch_to_game.system());
+        app.on_state_enter(STAGE, AppState::Restart, switch_to_game.system());
     }
 }
 

@@ -404,7 +404,7 @@ dependencies = [
 [[package]]
 name = "bevy_improved_audio"
 version = "0.1.0"
-source = "git+https://github.com/NiklasEi/bevy_kira_audio.git#298d98f096545ed76045adf2de9e544ed4f6c778"
+source = "git+https://github.com/NiklasEi/bevy_kira_audio.git#e48453e73e9d5c77bcb98ecbdee5e2e0d4f499d3"
 dependencies = [
  "anyhow",
  "bevy",
