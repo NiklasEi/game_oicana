@@ -11,7 +11,7 @@ default = [
     "bevy/bevy_winit",
     "bevy/render",
     "bevy/png",
-    "bevy_improved_audio/mp3"
+    "bevy_kira_audio/mp3"
 ]
 
 native = [
@@ -20,7 +20,7 @@ native = [
 
 [dependencies]
 bevy = {version="0.4.0", default-features=false}
-# bevy_improved_audio = {path="../../../bevy_improved_audio"}
-bevy_improved_audio = { git="https://github.com/NiklasEi/bevy_kira_audio.git" }
+#bevy_kira_audio = {path="../../../bevy_kira_audio"}
+bevy_kira_audio = { git="https://github.com/NiklasEi/bevy_kira_audio.git" }
 bevy_prototype_lyon = "0.1.5"
 rand = "0.8.1"

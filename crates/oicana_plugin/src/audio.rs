@@ -3,7 +3,7 @@ use crate::loading::AudioAssets;
 use crate::towers::TowerShot;
 use crate::{AppState, STAGE};
 use bevy::prelude::*;
-use bevy_improved_audio::{Audio, AudioPlugin};
+use bevy_kira_audio::{Audio, AudioPlugin};
 
 pub struct InternalAudioPlugin;
 

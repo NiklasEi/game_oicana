@@ -2,7 +2,7 @@ use crate::map::Tile;
 use crate::{AppState, STAGE};
 use bevy::asset::LoadState;
 use bevy::prelude::*;
-use bevy_improved_audio::AudioSource;
+use bevy_kira_audio::AudioSource;
 
 pub struct LoadingPlugin;
 
