@@ -1,4 +1,5 @@
 <!-- next-header -->
+- Add rudimentary audio support for WASM builds
 
 ## [1.4.0] - 2021-01-20
 - retry button

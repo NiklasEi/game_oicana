@@ -1,3 +1,6 @@
+mod paths;
+
+use crate::loading::paths::PATHS;
 use crate::map::Tile;
 use crate::{AppState, STAGE};
 use bevy::asset::LoadState;
@@ -49,12 +52,19 @@ impl TextureAssets {
 }
 
 fn start_loading(commands: &mut Commands, asset_server: Res<AssetServer>) {
-    let sound: Vec<HandleUntyped> = asset_server
-        .load_folder("sounds")
-        .expect("Failed to load sounds");
-    let textures: Vec<HandleUntyped> = asset_server
-        .load_folder("textures")
-        .expect("Failed to load textures");
+    let mut sound: Vec<HandleUntyped> = vec![];
+    sound.push(asset_server.load_untyped(PATHS.sound_background));
+    sound.push(asset_server.load_untyped(PATHS.sound_enemy_breach));
+    sound.push(asset_server.load_untyped(PATHS.sound_tower_shots));
+
+    let mut textures: Vec<HandleUntyped> = vec![];
+    textures.push(asset_server.load_untyped(PATHS.texture_empty));
+    textures.push(asset_server.load_untyped(PATHS.texture_tower_plot));
+    textures.push(asset_server.load_untyped(PATHS.texture_tower));
+    textures.push(asset_server.load_untyped(PATHS.texture_path));
+    textures.push(asset_server.load_untyped(PATHS.texture_castle));
+    textures.push(asset_server.load_untyped(PATHS.texture_cloud));
+    textures.push(asset_server.load_untyped(PATHS.texture_spawn));
 
     commands.insert_resource(LoadingState { sound, textures });
 }
@@ -77,19 +87,19 @@ fn check_state(
     }
 
     commands.insert_resource(AudioAssets {
-        background: asset_server.get_handle("sounds/background.mp3"),
-        tower_shots: asset_server.get_handle("sounds/shot.mp3"),
-        enemy_breach: asset_server.get_handle("sounds/enemybreach.mp3"),
+        background: asset_server.get_handle(PATHS.sound_background),
+        tower_shots: asset_server.get_handle(PATHS.sound_tower_shots),
+        enemy_breach: asset_server.get_handle(PATHS.sound_enemy_breach),
     });
 
     commands.insert_resource(TextureAssets {
-        empty_handle: asset_server.get_handle("textures/blank64x64.png"),
-        tower_plot_handle: asset_server.get_handle("textures/towerplot64x64.png"),
-        tower_handle: asset_server.get_handle("textures/tower64x64.png"),
-        path_handle: asset_server.get_handle("textures/path64x64.png"),
-        castle_handle: asset_server.get_handle("textures/castle64x64.png"),
-        cloud_handle: asset_server.get_handle("textures/cloud64x64.png"),
-        spawn_handle: asset_server.get_handle("textures/spawn.png"),
+        empty_handle: asset_server.get_handle(PATHS.texture_empty),
+        tower_plot_handle: asset_server.get_handle(PATHS.texture_tower_plot),
+        tower_handle: asset_server.get_handle(PATHS.texture_tower),
+        path_handle: asset_server.get_handle(PATHS.texture_path),
+        castle_handle: asset_server.get_handle(PATHS.texture_castle),
+        cloud_handle: asset_server.get_handle(PATHS.texture_cloud),
+        spawn_handle: asset_server.get_handle(PATHS.texture_spawn),
     });
 
     state.set_next(AppState::InGame).unwrap();
