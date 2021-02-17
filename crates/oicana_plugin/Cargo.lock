@@ -164,9 +164,9 @@ dependencies = [
 
 [[package]]
 name = "async-channel"
-version = "1.5.1"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59740d83946db6a5af71ae25ddf9562c2b176b2ca42cf99a455f09f4a220d6b9"
+checksum = "ead32ec3da16a4ce0ca8de4614295a1e06d019d17978b774faa8b4d4b8a6a51b"
 dependencies = [
  "concurrent-queue",
  "event-listener",
@@ -436,7 +436,8 @@ dependencies = [
 
 [[package]]
 name = "bevy_kira_audio"
-version = "0.1.0"
+version = "0.2.0"
+source = "git+https://github.com/NiklasEi/bevy_kira_audio.git#fdbb7c2399f0501abf9599ee67886885bbb74965"
 dependencies = [
  "anyhow",
  "bevy",
@@ -467,7 +468,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cee6066dc393c913f3eb8873c3d3978010b1664b5947f6fa38c28be326da9735"
 dependencies = [
  "bevy_reflect",
- "glam",
+ "glam 0.11.3",
 ]
 
 [[package]]
@@ -490,9 +491,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_prototype_lyon"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dd76a39d0f1914c96d42d06e91ec7551ecf98117e6347c44f7aa72728ae00d9"
+checksum = "5fd67dc92de3471a5928959d6e3bfd311a2363f01badf4277125e75f6fa0c4f8"
 dependencies = [
  "bevy",
  "lyon_tessellation",
@@ -510,7 +511,7 @@ dependencies = [
  "bevy_utils",
  "downcast-rs",
  "erased-serde",
- "glam",
+ "glam 0.11.3",
  "parking_lot",
  "serde",
  "smallvec",
@@ -1746,6 +1747,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "glam"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ad8819b352632f676098176a51e11e324e8cee4c2518dd67e58c36b848438e6"
+dependencies = [
+ "version_check",
+]
+
+[[package]]
 name = "glob"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1830,11 +1840,11 @@ checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
 name = "hexasphere"
-version = "3.1.0"
+version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b81ef4574a098bd48fad1a5cd7c4e6e908ac9a90d85338cef224be96f3059355"
+checksum = "cd045b4b2fcd330e6e17bb0fc5e91a96c1511c0802ae6e45b4f80463c55c4a8b"
 dependencies = [
- "glam",
+ "glam 0.12.0",
  "lazy_static",
 ]
 
@@ -2677,7 +2687,7 @@ checksum = "0ef9e7e66b4468674bfcb0c81af8b7fa0bb154fa9f28eb840da5c447baeb8d7e"
 dependencies = [
  "libc",
  "rand_chacha 0.3.0",
- "rand_core 0.6.1",
+ "rand_core 0.6.2",
  "rand_hc 0.3.0",
 ]
 
@@ -2698,7 +2708,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e12735cf05c9e10bf21534da50a147b924d555dc7a547c42e6bb2d5b6017ae0d"
 dependencies = [
  "ppv-lite86",
- "rand_core 0.6.1",
+ "rand_core 0.6.2",
 ]
 
 [[package]]
@@ -2712,9 +2722,9 @@ dependencies = [
 
 [[package]]
 name = "rand_core"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c026d7df8b298d90ccbbc5190bd04d85e159eaf5576caeacf8741da93ccbd2e5"
+checksum = "34cf66eb183df1c5876e2dcf6b13d57340741e8dc255b48e40a26de954d06ae7"
 dependencies = [
  "getrandom 0.2.2",
 ]
@@ -2734,7 +2744,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3190ef7066a446f2e7f42e239d161e905420ccab01eb967c9eb27d21b2322a73"
 dependencies = [
- "rand_core 0.6.1",
+ "rand_core 0.6.2",
 ]
 
 [[package]]
@@ -2760,9 +2770,9 @@ checksum = "e509b8eba9ca1884760ad1e2161cece724d4fd2b4cb47ddc01706920c6500cd7"
 
 [[package]]
 name = "redox_syscall"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05ec8ca9416c5ea37062b502703cd7fcb207736bc294f6e0cf367ac6fc234570"
+checksum = "94341e4e44e24f6b591b59e47a8a027df12e008d73fd5672dbea9cc22f4507d9"
 dependencies = [
  "bitflags",
 ]

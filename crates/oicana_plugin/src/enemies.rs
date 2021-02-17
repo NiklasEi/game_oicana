@@ -122,7 +122,6 @@ impl EnemyColor {
 
 fn spawn_enemies(
     commands: &mut Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
     map: Res<Map>,
     time: Res<Time>,
     mut game_state: ResMut<GameState>,
@@ -153,15 +152,11 @@ fn spawn_enemies(
     let percent: i32 = rng.gen_range(0..50); // generates a float between 0 and 1
     health += percent * one_percent;
     match form {
-        EnemyForm::Circle => {
-            create_circle_enemy(commands, &mut materials, color, &map, health, &mut meshes)
-        }
+        EnemyForm::Circle => create_circle_enemy(commands, &mut materials, color, &map, health),
         EnemyForm::Quadratic => {
-            create_quadratic_enemy(commands, &mut materials, color, &map, health, &mut meshes)
+            create_quadratic_enemy(commands, &mut materials, color, &map, health)
         }
-        EnemyForm::Triangle => {
-            create_triangle_enemy(commands, &mut materials, color, &map, health, &mut meshes)
-        }
+        EnemyForm::Triangle => create_triangle_enemy(commands, &mut materials, color, &map, health),
     }
 }
 
@@ -171,9 +166,8 @@ fn create_circle_enemy(
     color: EnemyColor,
     map: &Res<Map>,
     health: i32,
-    meshes: &mut ResMut<Assets<Mesh>>,
 ) {
-    let path = build_circle_path();
+    let geometry = build_circle_path();
     let mut enemy = Enemy {
         current_waypoint_index: 0,
         form: EnemyForm::Circle,
@@ -184,30 +178,29 @@ fn create_circle_enemy(
         travelled: 0.,
     };
     commands
-        .spawn(path.fill(
+        .spawn(GeometryBuilder::build_as(
+            &geometry,
             enemy.get_color_handle(materials),
-            meshes,
-            Vec3::new(map.spawn.x, map.spawn.y, 0.),
-            &FillOptions::default(),
+            TessellationMode::Fill(FillOptions::default()),
+            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
         .with(enemy);
 }
 
-pub fn build_circle_path() -> Path {
+pub fn build_circle_path() -> impl Geometry {
     let mut builder = PathBuilder::new();
-    builder.arc(point(0.000001, 0.000001), 10., 10., 2. * PI, 0.1);
+    builder.arc(Vec2::new(0.001, 0.001), Vec2::new(10.0, 10.0), 2. * PI, 0.0);
     builder.build()
 }
 
 fn create_triangle_enemy(
     commands: &mut Commands,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
     color: EnemyColor,
     map: &Res<Map>,
     health: i32,
-    meshes: &mut ResMut<Assets<Mesh>>,
 ) {
-    let path = build_triangle_path();
+    let geometry = build_triangle_path();
     let mut enemy = Enemy {
         health,
         max_health: health,
@@ -218,33 +211,39 @@ fn create_triangle_enemy(
         travelled: 0.,
     };
     commands
-        .spawn(path.fill(
-            enemy.get_color_handle(&mut materials),
-            meshes,
-            Vec3::new(map.spawn.x, map.spawn.y, 0.),
-            &FillOptions::default(),
+        .spawn(GeometryBuilder::build_as(
+            &geometry,
+            enemy.get_color_handle(materials),
+            TessellationMode::Fill(FillOptions::default()),
+            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
         .with(enemy);
 }
 
-pub fn build_triangle_path() -> Path {
+pub fn build_triangle_path() -> impl Geometry {
     let mut builder = PathBuilder::new();
-    builder.move_to(point(-5., 9.));
-    builder.line_to(point(-5., -9.));
-    builder.line_to(point(10., 0.));
-    builder.line_to(point(-5., 9.));
+    builder.move_to(Vec2::new(-5., 9.));
+    builder.line_to(Vec2::new(-5., -9.));
+    builder.line_to(Vec2::new(10., 0.));
+    builder.line_to(Vec2::new(-5., 9.));
     builder.build()
 }
 
 fn create_quadratic_enemy(
     commands: &mut Commands,
-    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
     color: EnemyColor,
     map: &Res<Map>,
     health: i32,
-    meshes: &mut ResMut<Assets<Mesh>>,
 ) {
-    let path = build_quadratic_path();
+    let rectangle = shapes::Rectangle {
+        width: 18.0,
+        height: 18.0,
+        ..shapes::Rectangle::default()
+    };
+    let mut builder = GeometryBuilder::new();
+    builder.add(&rectangle);
+
     let mut enemy = Enemy {
         health,
         max_health: health,
@@ -255,23 +254,12 @@ fn create_quadratic_enemy(
         travelled: 0.,
     };
     commands
-        .spawn(path.fill(
-            enemy.get_color_handle(&mut materials),
-            meshes,
-            Vec3::new(map.spawn.x, map.spawn.y, 0.),
-            &FillOptions::default(),
+        .spawn(builder.build(
+            enemy.get_color_handle(materials),
+            TessellationMode::Fill(FillOptions::default()),
+            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
         .with(enemy);
-}
-
-pub fn build_quadratic_path() -> Path {
-    let mut builder = PathBuilder::new();
-    builder.move_to(point(-9., 9.));
-    builder.line_to(point(-9., -9.));
-    builder.line_to(point(9., -9.));
-    builder.line_to(point(9., 9.));
-    builder.line_to(point(-9., 9.));
-    builder.build()
 }
 
 fn remove_enemies(

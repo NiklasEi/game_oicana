@@ -17,6 +17,7 @@ use crate::towers::TowersPlugin;
 use crate::ui::UiPlugin;
 
 use bevy::prelude::*;
+use bevy_prototype_lyon::plugin::ShapePlugin;
 
 pub struct GamePlugin;
 
@@ -40,8 +41,9 @@ impl Plugin for GamePlugin {
             .add_plugin(TowersPlugin)
             .add_plugin(BulletPlugin)
             .add_plugin(UiPlugin)
-            .add_plugin(PuzzlePlugin);
-        app.add_plugin(InternalAudioPlugin);
+            .add_plugin(PuzzlePlugin)
+            .add_plugin(InternalAudioPlugin);
+        app.add_plugin(ShapePlugin);
         app.on_state_enter(STAGE, AppState::Restart, switch_to_game.system());
     }
 }

@@ -1,11 +1,14 @@
 use crate::enemies::{
-    build_circle_path, build_quadratic_path, build_triangle_path, Enemy, EnemyColor, EnemyForm,
-    Tameable,
+    build_circle_path, build_triangle_path, Enemy, EnemyColor, EnemyForm, Tameable,
 };
 use crate::map::{Coordinate, Map, Tile};
 use crate::{AppState, STAGE};
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::{point, FillOptions, LineJoin, PathBuilder, StrokeOptions};
+use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy_prototype_lyon::geometry::GeometryBuilder;
+use bevy_prototype_lyon::prelude::{FillOptions, LineJoin, PathBuilder, StrokeOptions};
+use bevy_prototype_lyon::shapes;
+use bevy_prototype_lyon::utils::TessellationMode;
 use rand::random;
 use std::f32::consts::PI;
 
@@ -94,7 +97,6 @@ fn set_tower_puzzles(
     mut puzzles: ResMut<Puzzles>,
     map: Res<Map>,
     mut puzzle_ids: ResMut<PuzzleIdFactory>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut tower_positions: Vec<Coordinate> = vec![];
@@ -111,7 +113,7 @@ fn set_tower_puzzles(
 
     for coordinate in tower_positions {
         let id = puzzle_ids.get_next_id();
-        let puzzle = spawn_puzzle(id, coordinate, commands, &mut meshes, &mut materials);
+        let puzzle = spawn_puzzle(id, coordinate, commands, &mut materials);
 
         puzzles.towers.push(puzzle);
     }
@@ -121,7 +123,6 @@ fn spawn_puzzle(
     id: usize,
     coordinate: Coordinate,
     commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
 ) -> Puzzle {
     let puzzle = Puzzle {
@@ -148,11 +149,6 @@ fn spawn_puzzle(
         ],
     };
     for (index, piece) in puzzle.pieces.iter().enumerate() {
-        let path = match piece.form {
-            EnemyForm::Circle => build_circle_path(),
-            EnemyForm::Triangle => build_triangle_path(),
-            EnemyForm::Quadratic => build_quadratic_path(),
-        };
         let coordinate = match index {
             0 => Coordinate {
                 x: coordinate.x - 16.,
@@ -172,22 +168,51 @@ fn spawn_puzzle(
             },
         };
 
-        commands
-            .spawn(
-                path.stroke(
-                    materials.add(piece.color.to_color().into()),
-                    &mut meshes,
-                    Vec3::new(coordinate.x, coordinate.y, 0.),
-                    &StrokeOptions::default()
+        let bundle: ShapeBundle = match piece.form {
+            EnemyForm::Circle => GeometryBuilder::build_as(
+                &build_circle_path(),
+                materials.add(ColorMaterial::color(piece.color.to_color())),
+                TessellationMode::Stroke(
+                    StrokeOptions::default()
                         .with_line_width(2.)
                         .with_line_join(LineJoin::Round),
                 ),
-            )
-            .with(PuzzleSlot {
-                piece: piece.clone(),
-                filled: false,
-                puzzle_id: id,
-            });
+                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+            ),
+            EnemyForm::Triangle => GeometryBuilder::build_as(
+                &build_triangle_path(),
+                materials.add(ColorMaterial::color(piece.color.to_color())),
+                TessellationMode::Stroke(
+                    StrokeOptions::default()
+                        .with_line_width(2.)
+                        .with_line_join(LineJoin::Round),
+                ),
+                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+            ),
+            EnemyForm::Quadratic => {
+                let rectangle = shapes::Rectangle {
+                    width: 18.0,
+                    height: 18.0,
+                    ..shapes::Rectangle::default()
+                };
+                let mut builder = GeometryBuilder::new();
+                builder.add(&rectangle);
+                builder.build(
+                    materials.add(ColorMaterial::color(piece.color.to_color())),
+                    TessellationMode::Stroke(
+                        StrokeOptions::default()
+                            .with_line_width(2.)
+                            .with_line_join(LineJoin::Round),
+                    ),
+                    Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+                )
+            }
+        };
+        commands.spawn(bundle).with(PuzzleSlot {
+            piece: piece.clone(),
+            filled: false,
+            puzzle_id: id,
+        });
     }
     puzzle
 }
@@ -196,7 +221,6 @@ fn update_puzzle_slots(
     commands: &mut Commands,
     mut puzzles: ResMut<Puzzles>,
     query: Query<(Entity, &Transform, &PuzzleSlot), With<ToFill>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut complete_puzzle: ResMut<Events<CompletePuzzle>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
@@ -215,22 +239,39 @@ fn update_puzzle_slots(
             });
             continue;
         }
-        let path = match slot.piece.form {
-            EnemyForm::Circle => build_circle_path(),
-            EnemyForm::Triangle => build_triangle_path(),
-            EnemyForm::Quadratic => build_quadratic_path(),
-        };
-        commands
-            .spawn(path.fill(
+
+        let bundle: ShapeBundle = match slot.piece.form {
+            EnemyForm::Circle => GeometryBuilder::build_as(
+                &build_circle_path(),
                 materials.add(slot.piece.color.to_color().into()),
-                &mut meshes,
-                transform.translation,
-                &FillOptions::default(),
-            ))
-            .with(PuzzleSlot {
-                filled: true,
-                ..slot.clone()
-            });
+                TessellationMode::Fill(FillOptions::default()),
+                *transform,
+            ),
+            EnemyForm::Triangle => GeometryBuilder::build_as(
+                &build_triangle_path(),
+                materials.add(slot.piece.color.to_color().into()),
+                TessellationMode::Fill(FillOptions::default()),
+                *transform,
+            ),
+            EnemyForm::Quadratic => {
+                let rectangle = shapes::Rectangle {
+                    width: 18.0,
+                    height: 18.0,
+                    ..shapes::Rectangle::default()
+                };
+                let mut builder = GeometryBuilder::new();
+                builder.add(&rectangle);
+                builder.build(
+                    materials.add(slot.piece.color.to_color().into()),
+                    TessellationMode::Fill(FillOptions::default()),
+                    *transform,
+                )
+            }
+        };
+        commands.spawn(bundle).with(PuzzleSlot {
+            filled: true,
+            ..slot.clone()
+        });
     }
 }
 
@@ -309,21 +350,20 @@ fn pick_up_piece(
 fn show_cursor(
     commands: &mut Commands,
     pick_source: Res<PickSource>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut builder = PathBuilder::new();
-    builder.arc(point(0.000001, 0.000001), 3., 3., 2. * PI, 0.1);
+    builder.arc(Vec2::new(0.0, 0.0), Vec2::new(3.0, 3.0), 2. * PI, 0.0);
     let path = builder.build();
-    commands.spawn(path.fill(
+    commands.spawn(GeometryBuilder::build_as(
+        &path,
         materials.add(Color::BLACK.into()),
-        &mut meshes,
-        Vec3::new(
+        TessellationMode::Fill(FillOptions::default()),
+        Transform::from_translation(Vec3::new(
             pick_source.last_cursor_pos.x,
             pick_source.last_cursor_pos.y,
             10.,
-        ),
-        &FillOptions::default(),
+        )),
     ));
 }
 
@@ -351,7 +391,6 @@ fn update_puzzle(
     my_events: Res<Events<CompletePuzzle>>,
     slot_query: Query<(Entity, &PuzzleSlot)>,
     mut puzzle_ids: ResMut<PuzzleIdFactory>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for completed_puzzle in my_event_reader.iter(&my_events) {
@@ -371,7 +410,6 @@ fn update_puzzle(
             id,
             completed_puzzle.coordinate.clone(),
             commands,
-            &mut meshes,
             &mut materials,
         );
         puzzles.towers.push(puzzle);

@@ -1,5 +1,6 @@
 use crate::bullets::{spawn_bullet, Bullet};
 use crate::enemies::{Enemy, Tameable};
+use crate::loading::TextureAssets;
 use crate::map::{Coordinate, Map, MapTile, Tile};
 use crate::puzzle::CompletePuzzle;
 use crate::{AppState, STAGE};
@@ -61,7 +62,6 @@ fn shoot(
     commands: &mut Commands,
     time: Res<Time>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
     mut tower_shot: ResMut<Events<TowerShot>>,
     mut enemies_query: Query<(Entity, &Transform, &mut Enemy), Without<Tameable>>,
@@ -93,13 +93,7 @@ fn shoot(
                     speed: tower.speed,
                     target,
                 };
-                spawn_bullet(
-                    commands,
-                    bullet,
-                    tower_pos.translation,
-                    &mut materials,
-                    &mut meshes,
-                );
+                spawn_bullet(commands, bullet, tower_pos.translation, &mut materials);
                 tower_shot.send(TowerShot);
             }
         }
@@ -110,7 +104,7 @@ fn build_and_upgrade_towers(
     commands: &mut Commands,
     mut event_reader: Local<EventReader<CompletePuzzle>>,
     completed_puzzle: Res<Events<CompletePuzzle>>,
-    asset_server: Res<AssetServer>,
+    texture_assets: Res<TextureAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut tower_query: Query<(&mut Tower, &mut Timer)>,
     mut map_tiles_query: Query<(&Transform, &mut Handle<ColorMaterial>), With<MapTile>>,
@@ -128,12 +122,11 @@ fn build_and_upgrade_towers(
 
             *timer = Timer::from_seconds(if tower.level == 2 { 0.2 } else { 0.1 }, true);
         } else {
-            let tower_handle: Handle<Texture> = asset_server.load("tower64x64.png");
             for (transform, mut material) in map_tiles_query.iter_mut() {
                 if transform.translation.x == coordinate.x
                     && transform.translation.y == coordinate.y
                 {
-                    *material = materials.add(tower_handle.clone().into())
+                    *material = materials.add(texture_assets.tower_handle.clone().into())
                 }
             }
             commands
