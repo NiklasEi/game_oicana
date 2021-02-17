@@ -12,12 +12,17 @@ impl Plugin for InternalAudioPlugin {
         app.add_plugin(AudioPlugin)
             .on_state_enter(STAGE, AppState::InGame, start_audio.system())
             .on_state_update(STAGE, AppState::InGame, tower_shots.system())
-            .on_state_update(STAGE, AppState::InGame, enemy_breach.system());
+            .on_state_update(STAGE, AppState::InGame, enemy_breach.system())
+            .on_state_exit(STAGE, AppState::InGame, stop_audio.system());
     }
 }
 
 fn start_audio(audio_assets: Res<AudioAssets>, audio: Res<Audio>) {
-    audio.play(audio_assets.background.clone());
+    audio.play_looped(audio_assets.background.clone());
+}
+
+fn stop_audio(audio: Res<Audio>) {
+    audio.stop();
 }
 
 fn tower_shots(
