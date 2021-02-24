@@ -147,7 +147,6 @@ fn retry_system(
     button_materials: Res<ButtonMaterials>,
 ) {
     if game_state.health < 1 {
-        println!("spawning retry button");
         commands
             .spawn(ButtonBundle {
                 style: Style {

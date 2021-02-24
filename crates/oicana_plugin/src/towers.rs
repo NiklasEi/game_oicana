@@ -62,7 +62,6 @@ fn shoot(
     commands: &mut Commands,
     time: Res<Time>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
     mut tower_shot: ResMut<Events<TowerShot>>,
     mut enemies_query: Query<(Entity, &Transform, &mut Enemy), Without<Tameable>>,
@@ -94,13 +93,7 @@ fn shoot(
                     speed: tower.speed,
                     target,
                 };
-                spawn_bullet(
-                    commands,
-                    bullet,
-                    tower_pos.translation,
-                    &mut materials,
-                    &mut meshes,
-                );
+                spawn_bullet(commands, bullet, tower_pos.translation, &mut materials);
                 tower_shot.send(TowerShot);
             }
         }

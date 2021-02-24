@@ -48,17 +48,16 @@ pub fn spawn_bullet(
     bullet: Bullet,
     translation: Vec3,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     let mut builder = PathBuilder::new();
-    builder.arc(point(0.000001, 0.000001), 3., 3., 2. * PI, 0.1);
+    builder.arc(Vec2::new(0.001, 0.001), Vec2::new(3.0, 3.0), 2. * PI, 0.0);
     let path = builder.build();
     commands
-        .spawn(path.fill(
-            materials.add(Color::BLACK.into()),
-            meshes,
-            translation,
-            &FillOptions::default(),
+        .spawn(GeometryBuilder::build_as(
+            &path,
+            materials.add(ColorMaterial::color(Color::BLACK)),
+            TessellationMode::Fill(FillOptions::default()),
+            Transform::from_translation(translation),
         ))
         .with(bullet);
 }

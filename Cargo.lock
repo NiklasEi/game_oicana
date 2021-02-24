@@ -449,8 +449,8 @@ dependencies = [
 
 [[package]]
 name = "bevy_kira_audio"
-version = "0.1.0"
-source = "git+https://github.com/NiklasEi/bevy_kira_audio.git#7cf7c6fce146120e159b86e487a62a2d5c9b5ae1"
+version = "0.2.0"
+source = "git+https://github.com/NiklasEi/bevy_kira_audio.git#fdbb7c2399f0501abf9599ee67886885bbb74965"
 dependencies = [
  "anyhow",
  "bevy",
@@ -504,9 +504,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_prototype_lyon"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dd76a39d0f1914c96d42d06e91ec7551ecf98117e6347c44f7aa72728ae00d9"
+checksum = "5fd67dc92de3471a5928959d6e3bfd311a2363f01badf4277125e75f6fa0c4f8"
 dependencies = [
  "bevy",
  "lyon_tessellation",
