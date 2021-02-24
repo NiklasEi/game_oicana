@@ -19,6 +19,11 @@ impl Plugin for LoadingPlugin {
 pub struct LoadingState {
     sound: Vec<HandleUntyped>,
     textures: Vec<HandleUntyped>,
+    fonts: Vec<HandleUntyped>,
+}
+
+pub struct FontAssets {
+    pub fira_sans: Handle<Font>,
 }
 
 pub struct AudioAssets {
@@ -52,6 +57,9 @@ impl TextureAssets {
 }
 
 fn start_loading(commands: &mut Commands, asset_server: Res<AssetServer>) {
+    let mut fonts: Vec<HandleUntyped> = vec![];
+    fonts.push(asset_server.load_untyped(PATHS.fira_sans));
+
     let mut sound: Vec<HandleUntyped> = vec![];
     sound.push(asset_server.load_untyped(PATHS.sound_background));
     sound.push(asset_server.load_untyped(PATHS.sound_enemy_breach));
@@ -66,7 +74,11 @@ fn start_loading(commands: &mut Commands, asset_server: Res<AssetServer>) {
     textures.push(asset_server.load_untyped(PATHS.texture_cloud));
     textures.push(asset_server.load_untyped(PATHS.texture_spawn));
 
-    commands.insert_resource(LoadingState { sound, textures });
+    commands.insert_resource(LoadingState {
+        sound,
+        textures,
+        fonts,
+    });
 }
 
 fn check_state(
@@ -75,6 +87,11 @@ fn check_state(
     asset_server: Res<AssetServer>,
     loading_state: Res<LoadingState>,
 ) {
+    if LoadState::Loaded
+        != asset_server.get_group_load_state(loading_state.fonts.iter().map(|handle| handle.id))
+    {
+        return;
+    }
     if LoadState::Loaded
         != asset_server.get_group_load_state(loading_state.sound.iter().map(|handle| handle.id))
     {
@@ -85,6 +102,10 @@ fn check_state(
     {
         return;
     }
+
+    commands.insert_resource(FontAssets {
+        fira_sans: asset_server.get_handle(PATHS.fira_sans),
+    });
 
     commands.insert_resource(AudioAssets {
         background: asset_server.get_handle(PATHS.sound_background),
@@ -102,5 +123,5 @@ fn check_state(
         spawn_handle: asset_server.get_handle(PATHS.texture_spawn),
     });
 
-    state.set_next(AppState::InGame).unwrap();
+    state.set_next(AppState::Menu).unwrap();
 }

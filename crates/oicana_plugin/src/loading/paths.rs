@@ -1,4 +1,5 @@
 pub struct AssetPaths {
+    pub fira_sans: &'static str,
     pub sound_background: &'static str,
     pub sound_tower_shots: &'static str,
     pub sound_enemy_breach: &'static str,
@@ -12,6 +13,7 @@ pub struct AssetPaths {
 }
 
 pub const PATHS: AssetPaths = AssetPaths {
+    fira_sans: "fonts/FiraSans-Bold.ttf",
     sound_background: "sounds/background.ogg",
     sound_tower_shots: "sounds/shot.ogg",
     sound_enemy_breach: "sounds/enemybreach.ogg",

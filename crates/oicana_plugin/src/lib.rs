@@ -3,6 +3,7 @@ mod bullets;
 mod enemies;
 mod loading;
 mod map;
+mod menu;
 mod puzzle;
 mod towers;
 mod ui;
@@ -12,6 +13,7 @@ use crate::bullets::BulletPlugin;
 use crate::enemies::EnemiesPlugin;
 use crate::loading::LoadingPlugin;
 use crate::map::MapPlugin;
+use crate::menu::MenuPlugin;
 use crate::puzzle::PuzzlePlugin;
 use crate::towers::TowersPlugin;
 use crate::ui::UiPlugin;
@@ -28,6 +30,7 @@ pub enum AppState {
     Restart,
     InGame,
     Loading,
+    Menu,
 }
 
 impl Plugin for GamePlugin {
@@ -35,6 +38,7 @@ impl Plugin for GamePlugin {
         app.add_resource(ClearColor(Color::BLACK))
             .add_resource(State::new(AppState::Loading))
             .add_stage_after(stage::UPDATE, STAGE, StateStage::<AppState>::default())
+            .add_plugin(MenuPlugin)
             .add_plugin(LoadingPlugin)
             .add_plugin(MapPlugin)
             .add_plugin(EnemiesPlugin)
