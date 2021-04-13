@@ -1,76 +1,79 @@
+# This make file contains tasks for the web build of the game
+#   Serve the web version locally by running `cargo make serve`
+#   Build a web release by running `cargo make release` (release is the `build/web` directory)
+
 [env]
-ENV_DIR = {source="${CARGO_MAKE_PROFILE}", default_value = "debug", mapping = {release = "release"}}
-CARGO_TARGET_DIR = {value = "target", condition = {env_not_set = ["CARGO_TARGET_DIR"]}}
-CARGO_WASM_PATH = "${CARGO_TARGET_DIR}/wasm32-unknown-unknown/release/${CARGO_MAKE_CRATE_NAME}.wasm"
-TARGET_DIR = "target"
-CARGO_MANIFEST_DIR = "${CARGO_MAKE_WORKING_DIRECTORY}"
-CARGO_RELEASE_ARGS = "--release"
+TARGET_DIR = "target/wasm32-unknown-unknown/release/"
 
-[env.release]
-CARGO_WASM_PATH = "${CARGO_TARGET_DIR}/wasm32-unknown-unknown/release/${CARGO_MAKE_CRATE_NAME}.wasm"
-CARGO_RELEASE_ARGS = "--release"
+[tasks.release]
+dependencies = ["build-and-bind-wasm", "copy-files-for-release"]
 
-[tasks.show-env]
-command = "env"
+[tasks.serve]
+command = "basic-http-server"
+args = ["-x", "build/web/"]
+dependencies = ["build-and-bind-wasm", "copy-files-for-release", "basic-http-server"]
+
+[tasks.build-and-bind-wasm]
+args = ["--out-dir", "${TARGET_DIR}", "--out-name", "wasm", "--target", "web", "--no-typescript", "${TARGET_DIR}${CARGO_MAKE_CRATE_NAME}.wasm"]
+command = "wasm-bindgen"
+dependencies = ["cargo-build-web", "wasm-bindgen-cli"]
+
+[tasks.cargo-build-web]
+args = ["build", "--target", "wasm32-unknown-unknown", "--features", "web", "--release"]
+command = "cargo"
+
+# Due to https://github.com/mrk-its/bevy_webgl2/issues/35 we need a specific version at the moment
+[tasks.wasm-bindgen-cli]
+#install_crate = {crate_name = "wasm-bindgen-cli", binary = "wasm-bindgen", test_arg="--help"}
+command = "cargo"
+args = ["install", "wasm-bindgen-cli", "--force", "--version", "0.2.69"]
 
 [tasks.basic-http-server]
 install_crate = {crate_name = "basic-http-server", binary = "basic-http-server", test_arg="--help"}
 
-[tasks.wasm-bindgen-cli]
-install_crate = {crate_name = "wasm-bindgen-cli", binary = "wasm-bindgen", test_arg="--help"}
-
-[tasks.cargo-build-web]
-args = ["build", "--target", "wasm32-unknown-unknown", "--features", "web", "@@split(CARGO_RELEASE_ARGS, )"]
-command = "cargo"
-
-[tasks.cargo-release-web]
-args = ["build", "--target", "wasm32-unknown-unknown", "--features", "web", "--release"]
-command = "cargo"
-
-[tasks.build-web]
-args = ["--out-dir", "${TARGET_DIR}", "--out-name", "wasm", "--target", "web", "--no-typescript", "${CARGO_WASM_PATH}"]
-command = "wasm-bindgen"
-dependencies = ["cargo-build-web", "wasm-bindgen-cli"]
-
-[tasks.prepare-release-web]
-dependencies = ["cargo-release-web", "wasm-bindgen-cli", "copy-wasm-to-build-dir", "copy-index-to-build-dir", "copy-assets-to-build-dir"]
+[tasks.copy-files-for-release]
+dependencies = ["copy-wasm-to-build-dir", "copy-wasm-js-to-build-dir", "copy-wasm_bg-to-build-dir", "copy-index-to-build-dir", "copy-assets-to-build-dir", "copy-credits-to-build-dir"]
 
 [tasks.copy-wasm-to-build-dir]
-args = ["target/wasm32-unknown-unknown/release/oicana.wasm", "oicana_web/target/"]
+args = ["${TARGET_DIR}${CARGO_MAKE_CRATE_NAME}.wasm", "build/web/target/"]
+command = "cp"
+dependencies = ["create-build-dir", "build-and-bind-wasm"]
+
+[tasks.copy-wasm-js-to-build-dir]
+args = ["${TARGET_DIR}wasm.js", "build/web/target/"]
+command = "cp"
+dependencies = ["create-build-dir", "build-and-bind-wasm"]
+
+[tasks.copy-wasm_bg-to-build-dir]
+args = ["${TARGET_DIR}wasm_bg.wasm", "build/web/target/"]
+command = "cp"
+dependencies = ["create-build-dir", "build-and-bind-wasm"]
+
+[tasks.copy-assets-to-build-dir]
+args = ["-r", "assets", "build/web/"]
 command = "cp"
 dependencies = ["create-build-dir"]
 
-[tasks.copy-assets-to-build-dir]
-args = ["-r", "assets", "oicana_web"]
+[tasks.copy-credits-to-build-dir]
+args = ["-r", "credits", "build/web/"]
 command = "cp"
 dependencies = ["create-build-dir"]
 
 [tasks.copy-index-to-build-dir]
-args = ["index.html", "oicana_web/"]
+args = ["index.html", "build/web/"]
+command = "cp"
+dependencies = ["create-build-dir", "prepare-favicon"]
+
+[tasks.prepare-favicon]
+args = ["build/web/icon.ico", "build/web/favicon.ico"]
+command = "mv"
+dependencies = ["create-build-dir", "copy-favicon-to-build-dir"]
+
+[tasks.copy-favicon-to-build-dir]
+args = ["build/windows/icon.ico", "build/web/"]
 command = "cp"
 dependencies = ["create-build-dir"]
 
 [tasks.create-build-dir]
-args = ["-p", "oicana_web/target"]
+args = ["-p", "build/web/target"]
 command = "mkdir"
-
-[tasks.release-web]
-args = ["--out-dir", "oicana_web/target/", "--out-name", "wasm", "--target", "web", "--no-typescript", "oicana_web/target/oicana.wasm"]
-command = "wasm-bindgen"
-dependencies = ["prepare-release-web"]
-
-[tasks.build-native]
-args = ["build", "--features", "native", "@@split(CARGO_RELEASE_ARGS, )"]
-command = "cargo"
-
-[tasks.run]
-command = "${CARGO_TARGET_DIR}/${ENV_DIR}/${CARGO_MAKE_BINARY_EXECUTABLE_NAME}"
-dependencies = ["build-native"]
-
-[tasks.serve]
-command = "basic-http-server"
-args = ["-x"]
-dependencies = ["build-web", "basic-http-server"]
-
-[tasks.test]
-disabled = true

@@ -1,6 +1,6 @@
 # Oicana | Game submission for Mini Jam 71
 
-*The game tries to combine the genres `Tower defense`, `Monster tamer` and `Puzzle`. Mini Jam 71 called for a combination of at least two genres*
+*The game tries to combine the genres `Tower defense`, `Puzzle` and `Monster tamer` (admittedly, the last one is a stretch). Mini Jam 71 called for a combination of at least two genres*
 
 Oicana [is published on itch.io](https://niklme.itch.io/oicana). You can get the latest builds there or find them in [the releases of this repository](https://github.com/NiklasEi/oicana/releases).
 
@@ -10,9 +10,6 @@ All enemies are geometrical forms. In the beginning they are all grey, but when 
 
 As in every TD game, you can lose by letting too many enemies through to your base.
 
-## Open tasks
-The wasm build currently does not support sound.
-
 ## Credits
 
-Background music is from [Siddhartha](https://freemusicarchive.org/music/Siddhartha/the-truth-within/star-of-david) ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0))
+See [CREDITS.md](credits/CREDITS.md)

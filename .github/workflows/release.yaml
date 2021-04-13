@@ -1,12 +1,13 @@
 name: release-flow
 
-# https://help.github.com/en/articles/events-that-trigger-workflows#release-event-release
-# on: release
-
 on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+*"
+
+env:
+  GAME_EXECUTABLE_NAME: oicana
+  GAME_OSX_APP_NAME: Oicana
 
 jobs:
   build-macOS:
@@ -16,59 +17,70 @@ jobs:
       - name: Get tag
         id: tag
         uses: dawidd6/action-get-tag@v1
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
-      - name: Build and release
+      - name: Remove build script
+        run: |
+          rm build.rs
+      - name: Build release
         run: |
           cargo build --release --features native
-          mkdir -p build/macos/Oicana.app/Contents/MacOS/assets
-          cp -r assets/ build/macos/Oicana.app/Contents/MacOS/assets
-          cp target/release/oicana build/macos/Oicana.app/Contents/MacOS/
-          strip build/macos/Oicana.app/Contents/MacOS/oicana
-          hdiutil create -fs HFS+ -volname "Oicana" -srcfolder build/macos oicana.dmg
-      - name: Upload binaries to release
+      - name: Create release
+        run: |
+          mkdir -p build/macos/src/Game.app/Contents/MacOS/assets
+          cp -r assets/ build/macos/src/Game.app/Contents/MacOS/assets
+          cp -r credits/ build/macos/src/Game.app/Contents/MacOS/credits
+          cp target/release/${{ env.GAME_EXECUTABLE_NAME }} build/macos/src/Game.app/Contents/MacOS/
+          strip build/macos/src/Game.app/Contents/MacOS/${{ env.GAME_EXECUTABLE_NAME }}
+          mv build/macos/src/Game.app build/macos/src/${{ env.GAME_OSX_APP_NAME }}.app
+          hdiutil create -fs HFS+ -volname "${{ env.GAME_OSX_APP_NAME }}" -srcfolder build/macos/src ${{ env.GAME_EXECUTABLE_NAME }}.dmg
+      - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: oicana.dmg
-          asset_name: oicana_macOS_${{ steps.tag.outputs.tag }}.dmg
+          file: ${{ env.GAME_EXECUTABLE_NAME }}.dmg
+          asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ steps.tag.outputs.tag }}_macOS.dmg
           tag: ${{ github.ref }}
           overwrite: true
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
 
     steps:
       - name: Get tag
         id: tag
         uses: dawidd6/action-get-tag@v1
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
       - name: Install Dependencies
-        run: sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
-      - name: Build and release
+        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+      - name: Build release
         run: |
           cargo build --release --features native
-          strip target/release/oicana
-      - name: Prepare assets
+      - name: Prepare release
         run: |
-          mkdir target/release/assets && cp -r assets target/release/assets
-      - uses: papeloto/action-zip@v1
-        with:
-          files: target/release/assets/ target/release/oicana
-          dest: oicana_linux.zip
-      - name: Upload binaries to release
+          strip target/release/${{ env.GAME_EXECUTABLE_NAME }}
+          chmod +x target/release/${{ env.GAME_EXECUTABLE_NAME }}
+          mv target/release/bevy_game .
+      - name: Bundle release
+        run: |
+          tar -czf ${{ env.GAME_EXECUTABLE_NAME }}_linux.tar.gz bevy_game assets credits
+      - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: oicana_linux.zip
-          asset_name: oicana_linux_${{ steps.tag.outputs.tag }}.zip
+          file: ${{ env.GAME_EXECUTABLE_NAME }}_linux.tar.gz
+          asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ steps.tag.outputs.tag }}_linux.tar.gz
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -79,27 +91,31 @@ jobs:
       - name: Get tag
         id: tag
         uses: dawidd6/action-get-tag@v1
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
-      - name: Build and release
+      - name: Build release
         run: |
           cargo build --release --features native
-      - name: Prepare assets
+      - name: Prepare release
         run: |
           mkdir target/release/assets && cp -r assets target/release/assets
-      - uses: papeloto/action-zip@v1
+          mkdir target/release/credits && cp -r credits target/release/credits
+      - name: Zip release
+        uses: papeloto/action-zip@v1
         with:
-          files: target/release/assets/ target/release/oicana.exe
-          dest: oicana_windows.zip
-      - name: Upload binaries to release
+          files: target/release/assets/ target/release/${{ env.GAME_EXECUTABLE_NAME }}.exe
+          dest: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
+      - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: oicana_windows.zip
-          asset_name: oicana_windows_${{ steps.tag.outputs.tag }}.zip
+          file: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
+          asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ steps.tag.outputs.tag }}_windows.zip
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -110,13 +126,15 @@ jobs:
       - name: Get tag
         id: tag
         uses: dawidd6/action-get-tag@v1
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
       - name: Install Dependencies
-        run: sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+        run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
       - name: Install cargo-make
         run: |
           cargo install cargo-make
@@ -125,16 +143,17 @@ jobs:
           rustup target add wasm32-unknown-unknown
       - name: Build Release
         run: |
-          cargo make release-web
-      - uses: papeloto/action-zip@v1
+          cargo make release
+      - name: Zip release
+        uses: papeloto/action-zip@v1
         with:
-          files: oicana_web
-          dest: oicana_web.zip
-      - name: Upload binaries to release
+          files: build/web/
+          dest: ${{ env.GAME_EXECUTABLE_NAME }}_web.zip
+      - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: oicana_web.zip
-          asset_name: oicana_web_${{ steps.tag.outputs.tag }}.zip
+          file: ${{ env.GAME_EXECUTABLE_NAME }}_web.zip
+          asset_name: ${{ env.GAME_EXECUTABLE_NAME }}_${{ steps.tag.outputs.tag }}_web.zip
           tag: ${{ github.ref }}
           overwrite: true
