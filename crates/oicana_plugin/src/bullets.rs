@@ -1,5 +1,5 @@
 use crate::enemies::{Enemy, Tameable};
-use crate::{AppState, STAGE};
+use crate::AppState;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use std::f32::consts::PI;
@@ -8,8 +8,12 @@ pub struct BulletPlugin;
 
 impl Plugin for BulletPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.on_state_update(STAGE, AppState::InGame, update_bullets.system())
-            .on_state_exit(STAGE, AppState::InGame, break_down_bullets.system());
+        app.add_system_set(
+            SystemSet::on_update(AppState::InGame).with_system(update_bullets.system()),
+        )
+        .add_system_set(
+            SystemSet::on_exit(AppState::InGame).with_system(break_down_bullets.system()),
+        );
     }
 }
 
@@ -20,9 +24,9 @@ pub struct Bullet {
 }
 
 fn update_bullets(
-    commands: &mut Commands,
+    mut commands: Commands,
     mut bullet_query: Query<(Entity, &Bullet, &mut Transform)>,
-    mut enemy_query: Query<(&mut Enemy, &Transform), Without<Tameable>>,
+    mut enemy_query: Query<(&mut Enemy, &Transform), (Without<Tameable>, Without<Bullet>)>,
     time: Res<Time>,
 ) {
     let delta = time.delta().as_secs_f32();
@@ -32,38 +36,36 @@ fn update_bullets(
             let distance = target_transform.translation - transform.translation;
             if distance.length() < bullet.speed * delta {
                 target.health -= bullet.damage;
-                commands.despawn(entity);
+                commands.entity(entity).despawn();
             } else {
                 let movement = distance.normalize() * bullet.speed * delta;
                 transform.translation += movement;
             }
         } else {
-            commands.despawn(entity);
+            commands.entity(entity).despawn();
         }
     }
 }
 
-pub fn spawn_bullet(
-    commands: &mut Commands,
-    bullet: Bullet,
-    translation: Vec3,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-) {
+pub fn spawn_bullet(commands: &mut Commands, bullet: Bullet, translation: Vec3) {
     let mut builder = PathBuilder::new();
     builder.arc(Vec2::new(0.001, 0.001), Vec2::new(3.0, 3.0), 2. * PI, 0.0);
     let path = builder.build();
     commands
-        .spawn(GeometryBuilder::build_as(
+        .spawn_bundle(GeometryBuilder::build_as(
             &path,
-            materials.add(ColorMaterial::color(Color::BLACK)),
-            TessellationMode::Fill(FillOptions::default()),
+            ShapeColors {
+                main: Color::BLACK,
+                outline: Color::BLACK,
+            },
+            DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(translation),
         ))
-        .with(bullet);
+        .insert(bullet);
 }
 
-fn break_down_bullets(commands: &mut Commands, bullets_query: Query<Entity, With<Bullet>>) {
+fn break_down_bullets(mut commands: Commands, bullets_query: Query<Entity, With<Bullet>>) {
     for entity in bullets_query.iter() {
-        commands.despawn(entity);
+        commands.entity(entity).despawn();
     }
 }

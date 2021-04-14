@@ -1,6 +1,6 @@
 use crate::enemies::Trees;
 use crate::loading::TextureAssets;
-use crate::{AppState, STAGE};
+use crate::AppState;
 use bevy::prelude::*;
 
 pub struct MapPlugin;
@@ -8,11 +8,16 @@ pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut AppBuilder) {
         let map = Map::load_map();
-        app.add_resource(map.gather_trees())
-            .add_resource(map)
-            .on_state_enter(STAGE, AppState::InGame, render_map.system())
-            .on_state_enter(STAGE, AppState::InGame, setup_camera.system())
-            .on_state_exit(STAGE, AppState::InGame, break_down_map.system());
+        app.insert_resource(map.gather_trees())
+            .insert_resource(map)
+            .add_system_set(
+                SystemSet::on_enter(AppState::InGame)
+                    .with_system(render_map.system())
+                    .with_system(setup_camera.system()),
+            )
+            .add_system_set(
+                SystemSet::on_exit(AppState::InGame).with_system(break_down_map.system()),
+            );
     }
 }
 
@@ -183,19 +188,15 @@ impl Map {
     }
 }
 
-fn setup_camera(commands: &mut Commands, map: Res<Map>) {
-    commands.spawn(Camera2dBundle {
-        transform: Transform::from_translation(Vec3::new(
-            (map.width as f32 / 2. - 0.5) * map.tile_size,
-            (map.height as f32 / 2. - 0.5) * map.tile_size,
-            10.,
-        )),
-        ..Camera2dBundle::default()
-    });
+fn setup_camera(mut commands: Commands, map: Res<Map>) {
+    let mut camera_bundle = OrthographicCameraBundle::new_2d();
+    camera_bundle.transform.translation.x = (map.width as f32 / 2. - 0.5) * map.tile_size;
+    camera_bundle.transform.translation.y = (map.height as f32 / 2. - 0.5) * map.tile_size;
+    commands.spawn_bundle(camera_bundle);
 }
 
 fn render_map(
-    commands: &mut Commands,
+    mut commands: Commands,
     map: Res<Map>,
     texture_assets: Res<TextureAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -205,7 +206,7 @@ fn render_map(
             let tile = &map.tiles[row][column];
             let handle = texture_assets.get_handle_for_tile(tile);
             commands
-                .spawn(SpriteBundle {
+                .spawn_bundle(SpriteBundle {
                     material: materials.add(handle.into()),
                     transform: Transform::from_translation(Vec3::new(
                         column as f32 * map.tile_size,
@@ -214,7 +215,7 @@ fn render_map(
                     )),
                     ..Default::default()
                 })
-                .with(MapTile {
+                .insert(MapTile {
                     column,
                     row,
                     tile: tile.clone(),
@@ -223,8 +224,8 @@ fn render_map(
     }
 }
 
-fn break_down_map(commands: &mut Commands, tile_query: Query<Entity, With<Tile>>) {
+fn break_down_map(mut commands: Commands, tile_query: Query<Entity, With<Tile>>) {
     for entity in tile_query.iter() {
-        commands.despawn(entity);
+        commands.entity(entity).despawn();
     }
 }

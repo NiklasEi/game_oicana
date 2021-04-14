@@ -1,7 +1,7 @@
 use crate::enemies::EnemyBreach;
 use crate::loading::AudioAssets;
 use crate::towers::TowerShot;
-use crate::{AppState, STAGE};
+use crate::AppState;
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioPlugin};
 
@@ -10,10 +10,13 @@ pub struct InternalAudioPlugin;
 impl Plugin for InternalAudioPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_plugin(AudioPlugin)
-            .on_state_enter(STAGE, AppState::InGame, start_audio.system())
-            .on_state_update(STAGE, AppState::InGame, tower_shots.system())
-            .on_state_update(STAGE, AppState::InGame, enemy_breach.system())
-            .on_state_exit(STAGE, AppState::InGame, stop_audio.system());
+            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(start_audio.system()))
+            .add_system_set(
+                SystemSet::on_update(AppState::InGame)
+                    .with_system(tower_shots.system())
+                    .with_system(enemy_breach.system()),
+            )
+            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(stop_audio.system()));
     }
 }
 
@@ -28,22 +31,20 @@ fn stop_audio(audio: Res<Audio>) {
 
 fn tower_shots(
     audio_assets: Res<AudioAssets>,
-    mut tower_shot_reader: Local<EventReader<TowerShot>>,
-    tower_shot: Res<Events<TowerShot>>,
+    mut tower_shot_reader: EventReader<TowerShot>,
     audio: Res<Audio>,
 ) {
-    if tower_shot_reader.latest(&tower_shot).is_some() {
+    if tower_shot_reader.iter().last().is_some() {
         audio.play(audio_assets.tower_shots.clone());
     }
 }
 
 fn enemy_breach(
     audio_assets: Res<AudioAssets>,
-    mut enemy_breach_reader: Local<EventReader<EnemyBreach>>,
-    enemy_breach: Res<Events<EnemyBreach>>,
+    mut enemy_breach_reader: EventReader<EnemyBreach>,
     audio: Res<Audio>,
 ) {
-    if enemy_breach_reader.latest(&enemy_breach).is_some() {
+    if enemy_breach_reader.iter().last().is_some() {
         audio.play(audio_assets.enemy_breach.clone());
     }
 }

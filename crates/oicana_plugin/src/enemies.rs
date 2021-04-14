@@ -1,8 +1,7 @@
 use crate::map::{Coordinate, Map};
 use crate::puzzle::CurrentPiece;
 use crate::ui::GameState;
-use crate::{AppState, STAGE};
-use bevy::asset::HandleId;
+use crate::AppState;
 use bevy::prelude::*;
 use bevy::utils::{HashMap, Instant};
 use bevy_prototype_lyon::prelude::*;
@@ -14,15 +13,20 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(WaveState {
+        app.insert_resource(WaveState {
             last_spawn: Instant::now(),
         })
         .add_event::<EnemyBreach>()
-        .on_state_update(STAGE, AppState::InGame, remove_enemies.system())
-        .on_state_update(STAGE, AppState::InGame, spawn_enemies.system())
-        .on_state_update(STAGE, AppState::InGame, update_tamable_enemies.system())
-        .on_state_update(STAGE, AppState::InGame, update_enemies.system())
-        .on_state_exit(STAGE, AppState::InGame, break_down_enemies.system());
+        .add_system_set(
+            SystemSet::on_update(AppState::InGame)
+                .with_system(remove_enemies.system())
+                .with_system(spawn_enemies.system())
+                .with_system(update_tamable_enemies.system())
+                .with_system(update_enemies.system()),
+        )
+        .add_system_set(
+            SystemSet::on_exit(AppState::InGame).with_system(break_down_enemies.system()),
+        );
     }
 }
 
@@ -38,7 +42,7 @@ pub struct Enemy {
     current_waypoint_index: usize,
     pub form: EnemyForm,
     pub color: EnemyColor,
-    color_handle_map: HashMap<i32, HandleId>,
+    color_map: HashMap<i32, Color>,
     pub travelled: f32,
     pub health: i32,
     pub max_health: i32,
@@ -49,13 +53,10 @@ pub struct Trees {
 }
 
 impl Enemy {
-    pub fn get_color_handle(
-        &mut self,
-        materials: &mut ResMut<Assets<ColorMaterial>>,
-    ) -> Handle<ColorMaterial> {
-        let cached_color_handle_id = self.color_handle_map.get(&self.health);
-        if let Some(&handle) = cached_color_handle_id {
-            return materials.get_handle(handle);
+    pub fn get_color(&mut self) -> Color {
+        let cached_color = self.color_map.get(&self.health);
+        if let Some(&color) = cached_color {
+            return color.clone();
         }
         let health_factor = if self.health > 0 {
             self.health as f32 / self.max_health as f32
@@ -64,9 +65,8 @@ impl Enemy {
         };
         let full_color = Color::GRAY * health_factor + self.color.to_color() * (1. - health_factor);
 
-        let color_handle = materials.add(full_color.into());
-        self.color_handle_map.insert(self.health, color_handle.id);
-        color_handle
+        self.color_map.insert(self.health, full_color.clone());
+        full_color
     }
 }
 
@@ -121,12 +121,11 @@ impl EnemyColor {
 }
 
 fn spawn_enemies(
-    commands: &mut Commands,
+    mut commands: Commands,
     map: Res<Map>,
     time: Res<Time>,
     mut game_state: ResMut<GameState>,
     mut wave_state: ResMut<WaveState>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     if time.last_update().is_some()
         && time
@@ -151,40 +150,36 @@ fn spawn_enemies(
     let mut rng = rand::thread_rng();
     let percent: i32 = rng.gen_range(0..50); // generates a float between 0 and 1
     health += percent * one_percent;
+    println!("Spawning {:?}", form);
     match form {
-        EnemyForm::Circle => create_circle_enemy(commands, &mut materials, color, &map, health),
-        EnemyForm::Quadratic => {
-            create_quadratic_enemy(commands, &mut materials, color, &map, health)
-        }
-        EnemyForm::Triangle => create_triangle_enemy(commands, &mut materials, color, &map, health),
+        EnemyForm::Circle => create_circle_enemy(&mut commands, color, &map, health),
+        EnemyForm::Quadratic => create_quadratic_enemy(&mut commands, color, &map, health),
+        EnemyForm::Triangle => create_triangle_enemy(&mut commands, color, &map, health),
     }
 }
 
-fn create_circle_enemy(
-    commands: &mut Commands,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    color: EnemyColor,
-    map: &Res<Map>,
-    health: i32,
-) {
+fn create_circle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
     let geometry = build_circle_path();
     let mut enemy = Enemy {
         current_waypoint_index: 0,
         form: EnemyForm::Circle,
         health,
         max_health: health,
-        color_handle_map: HashMap::default(),
+        color_map: HashMap::default(),
         color,
         travelled: 0.,
     };
     commands
-        .spawn(GeometryBuilder::build_as(
+        .spawn_bundle(GeometryBuilder::build_as(
             &geometry,
-            enemy.get_color_handle(materials),
-            TessellationMode::Fill(FillOptions::default()),
+            ShapeColors {
+                main: enemy.get_color(),
+                outline: Color::DARK_GRAY,
+            },
+            DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .with(enemy);
+        .insert(enemy);
 }
 
 pub fn build_circle_path() -> impl Geometry {
@@ -193,31 +188,28 @@ pub fn build_circle_path() -> impl Geometry {
     builder.build()
 }
 
-fn create_triangle_enemy(
-    commands: &mut Commands,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    color: EnemyColor,
-    map: &Res<Map>,
-    health: i32,
-) {
+fn create_triangle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
     let geometry = build_triangle_path();
     let mut enemy = Enemy {
         health,
         max_health: health,
         current_waypoint_index: 0,
         form: EnemyForm::Triangle,
-        color_handle_map: HashMap::default(),
+        color_map: HashMap::default(),
         color,
         travelled: 0.,
     };
     commands
-        .spawn(GeometryBuilder::build_as(
+        .spawn_bundle(GeometryBuilder::build_as(
             &geometry,
-            enemy.get_color_handle(materials),
-            TessellationMode::Fill(FillOptions::default()),
+            ShapeColors {
+                main: enemy.get_color(),
+                outline: Color::DARK_GRAY,
+            },
+            DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .with(enemy);
+        .insert(enemy);
 }
 
 pub fn build_triangle_path() -> impl Geometry {
@@ -229,13 +221,7 @@ pub fn build_triangle_path() -> impl Geometry {
     builder.build()
 }
 
-fn create_quadratic_enemy(
-    commands: &mut Commands,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    color: EnemyColor,
-    map: &Res<Map>,
-    health: i32,
-) {
+fn create_quadratic_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
     let rectangle = shapes::Rectangle {
         width: 18.0,
         height: 18.0,
@@ -250,23 +236,26 @@ fn create_quadratic_enemy(
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
         color,
-        color_handle_map: HashMap::default(),
+        color_map: HashMap::default(),
         travelled: 0.,
     };
     commands
-        .spawn(builder.build(
-            enemy.get_color_handle(materials),
-            TessellationMode::Fill(FillOptions::default()),
+        .spawn_bundle(builder.build(
+            ShapeColors {
+                main: enemy.get_color(),
+                outline: Color::DARK_GRAY,
+            },
+            DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .with(enemy);
+        .insert(enemy);
 }
 
 fn remove_enemies(
-    commands: &mut Commands,
+    mut commands: Commands,
     map: Res<Map>,
     mut game_state: ResMut<GameState>,
-    mut enemy_breach: ResMut<Events<EnemyBreach>>,
+    mut enemy_breach: EventWriter<EnemyBreach>,
     enemy_query: Query<(Entity, &Enemy), Without<Tameable>>,
 ) {
     for (entity, enemy) in enemy_query.iter() {
@@ -274,7 +263,7 @@ fn remove_enemies(
             if game_state.health > 0 {
                 game_state.score += enemy.max_health as usize;
             }
-            commands.insert_one(entity, Tameable);
+            commands.entity(entity).insert(Tameable);
             continue;
         }
         if enemy.current_waypoint_index >= map.waypoints.len() {
@@ -282,7 +271,7 @@ fn remove_enemies(
                 game_state.health -= 1;
                 enemy_breach.send(EnemyBreach);
             }
-            commands.despawn(entity);
+            commands.entity(entity).despawn();
             continue;
         }
     }
@@ -293,24 +282,26 @@ fn update_enemies(
     map: Res<Map>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut enemy_query: Query<
-        (&mut Enemy, &mut Transform, &mut Handle<ColorMaterial>),
+        (&mut Enemy, &mut Transform, &mut Handle<ColorMaterial>), // Todo
         Without<Tameable>,
     >,
 ) {
     let delta = time.delta().as_millis() as f32;
     let speed = 0.1;
+    println!("move!");
     for (mut enemy, mut transform, mut color) in enemy_query.iter_mut() {
         if enemy.current_waypoint_index >= map.waypoints.len() {
             continue;
         }
-        *color = enemy.get_color_handle(&mut materials);
+        *color = materials.add(enemy.get_color().into());
         let destination = map.waypoints.get(enemy.current_waypoint_index).unwrap();
         let distance = Vec3::new(destination.x, destination.y, 0.) - transform.translation;
-        if distance == Vec3::zero() {
+        if distance == Vec3::ZERO {
             enemy.current_waypoint_index += 1;
             continue;
         }
         let movement = distance.normalize() * delta * speed;
+        println!("moving {:?}", movement);
         if movement.length() > distance.length() {
             transform.translation = Vec3::new(destination.x, destination.y, 0.);
             enemy.travelled += distance.length();
@@ -323,7 +314,7 @@ fn update_enemies(
 }
 
 fn update_tamable_enemies(
-    commands: &mut Commands,
+    mut commands: Commands,
     time: Res<Time>,
     trees: Res<Trees>,
     currently_picked_up: Res<CurrentPiece>,
@@ -355,18 +346,18 @@ fn update_tamable_enemies(
         if direction.is_finite() {
             let movement = direction.normalize() * delta * speed;
             if movement.length() > direction.length() {
-                commands.despawn(entity);
+                commands.entity(entity).despawn();
             } else {
                 transform.translation += movement;
             }
         } else {
-            commands.despawn(entity);
+            commands.entity(entity).despawn();
         }
     }
 }
 
-fn break_down_enemies(commands: &mut Commands, enemies_query: Query<Entity, With<Enemy>>) {
+fn break_down_enemies(mut commands: Commands, enemies_query: Query<Entity, With<Enemy>>) {
     for entity in enemies_query.iter() {
-        commands.despawn(entity);
+        commands.entity(entity).despawn();
     }
 }

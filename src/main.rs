@@ -7,14 +7,13 @@ use oicana_plugin::GamePlugin;
 #[cfg(target_arch = "wasm32")]
 use bevy_webgl2;
 
-// #[cfg(debug_assertions)]
-// use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin};
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 #[bevy_main]
 fn main() {
     let mut app = App::build();
-    app.add_resource(Msaa { samples: 4 })
-        .add_resource(WindowDescriptor {
+    app.insert_resource(Msaa { samples: 4 })
+        .insert_resource(WindowDescriptor {
             width: 800.,
             height: 600.,
             title: "Oicana".to_string(),
@@ -25,10 +24,8 @@ fn main() {
     #[cfg(target_arch = "wasm32")]
     app.add_plugin(bevy_webgl2::WebGL2Plugin);
 
-    // #[cfg(debug_assertions)]
-    //     app.add_plugin(FrameTimeDiagnosticsPlugin::default());
-    // #[cfg(debug_assertions)]
-    //     app.add_plugin(PrintDiagnosticsPlugin::default());
+    app.add_plugin(FrameTimeDiagnosticsPlugin::default());
+    app.add_plugin(LogDiagnosticsPlugin::default());
 
     app.add_plugin(GamePlugin).run();
 }

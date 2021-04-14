@@ -3,7 +3,7 @@ use crate::enemies::{Enemy, Tameable};
 use crate::loading::TextureAssets;
 use crate::map::{Coordinate, Map, MapTile, Tile};
 use crate::puzzle::CompletePuzzle;
-use crate::{AppState, STAGE};
+use crate::AppState;
 use bevy::prelude::*;
 
 pub struct TowersPlugin;
@@ -11,10 +11,17 @@ pub struct TowersPlugin;
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_event::<TowerShot>()
-            .on_state_enter(STAGE, AppState::InGame, spawn_map_tower.system())
-            .on_state_update(STAGE, AppState::InGame, shoot.system())
-            .on_state_update(STAGE, AppState::InGame, build_and_upgrade_towers.system())
-            .on_state_exit(STAGE, AppState::InGame, break_down_towers.system());
+            .add_system_set(
+                SystemSet::on_enter(AppState::InGame).with_system(spawn_map_tower.system()),
+            )
+            .add_system_set(
+                SystemSet::on_update(AppState::InGame)
+                    .with_system(shoot.system())
+                    .with_system(build_and_upgrade_towers.system()),
+            )
+            .add_system_set(
+                SystemSet::on_exit(AppState::InGame).with_system(break_down_towers.system()),
+            );
     }
 }
 
@@ -28,7 +35,7 @@ struct Tower {
     coordinate: Coordinate,
 }
 
-fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
+fn spawn_map_tower(mut commands: Commands, map: Res<Map>) {
     let mut tower_positions: Vec<Coordinate> = vec![];
 
     for (row_index, row) in map.tiles.iter().enumerate() {
@@ -44,7 +51,7 @@ fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
 
     for coordinate in tower_positions {
         commands
-            .spawn((
+            .spawn_bundle((
                 Tower {
                     range: 100.,
                     damage: 15,
@@ -54,20 +61,19 @@ fn spawn_map_tower(commands: &mut Commands, map: Res<Map>) {
                 },
                 Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
             ))
-            .with(Timer::from_seconds(0.3, true));
+            .insert(Timer::from_seconds(0.3, true));
     }
 }
 
 fn shoot(
-    commands: &mut Commands,
+    mut commands: Commands,
     time: Res<Time>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
-    mut tower_shot: ResMut<Events<TowerShot>>,
+    mut tower_shot: EventWriter<TowerShot>,
     mut enemies_query: Query<(Entity, &Transform, &mut Enemy), Without<Tameable>>,
 ) {
     for (tower_pos, tower, mut timer) in tower_query.iter_mut() {
-        timer.tick(time.delta_seconds());
+        timer.tick(time.delta());
         if timer.just_finished() {
             let furthest_target: Option<(Entity, f32)> = enemies_query
                 .iter_mut()
@@ -93,7 +99,7 @@ fn shoot(
                     speed: tower.speed,
                     target,
                 };
-                spawn_bullet(commands, bullet, tower_pos.translation, &mut materials);
+                spawn_bullet(&mut commands, bullet, tower_pos.translation);
                 tower_shot.send(TowerShot);
             }
         }
@@ -101,15 +107,14 @@ fn shoot(
 }
 
 fn build_and_upgrade_towers(
-    commands: &mut Commands,
-    mut event_reader: Local<EventReader<CompletePuzzle>>,
-    completed_puzzle: Res<Events<CompletePuzzle>>,
+    mut commands: Commands,
+    mut event_reader: EventReader<CompletePuzzle>,
     texture_assets: Res<TextureAssets>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut tower_query: Query<(&mut Tower, &mut Timer)>,
     mut map_tiles_query: Query<(&Transform, &mut Handle<ColorMaterial>), With<MapTile>>,
 ) {
-    for completed_puzzle in event_reader.iter(&completed_puzzle) {
+    for completed_puzzle in event_reader.iter() {
         let coordinate: Coordinate = completed_puzzle.coordinate.clone();
         if let Some((mut tower, mut timer)) = tower_query
             .iter_mut()
@@ -130,7 +135,7 @@ fn build_and_upgrade_towers(
                 }
             }
             commands
-                .spawn((
+                .spawn_bundle((
                     Tower {
                         range: 100.,
                         damage: 15,
@@ -140,13 +145,13 @@ fn build_and_upgrade_towers(
                     },
                     Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
                 ))
-                .with(Timer::from_seconds(0.3, true));
+                .insert(Timer::from_seconds(0.3, true));
         }
     }
 }
 
-fn break_down_towers(commands: &mut Commands, tower_query: Query<Entity, With<Tower>>) {
+fn break_down_towers(mut commands: Commands, tower_query: Query<Entity, With<Tower>>) {
     for entity in tower_query.iter() {
-        commands.despawn(entity);
+        commands.entity(entity).despawn();
     }
 }

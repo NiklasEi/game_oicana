@@ -23,9 +23,7 @@ use bevy_prototype_lyon::plugin::ShapePlugin;
 
 pub struct GamePlugin;
 
-const STAGE: &str = "oicana_stage";
-
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum AppState {
     Restart,
     InGame,
@@ -35,9 +33,8 @@ pub enum AppState {
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_resource(ClearColor(Color::BLACK))
-            .add_resource(State::new(AppState::Loading))
-            .add_stage_after(stage::UPDATE, STAGE, StateStage::<AppState>::default())
+        app.insert_resource(ClearColor(Color::BLACK))
+            .add_state(AppState::Loading)
             .add_plugin(MenuPlugin)
             .add_plugin(LoadingPlugin)
             .add_plugin(MapPlugin)
@@ -48,10 +45,12 @@ impl Plugin for GamePlugin {
             .add_plugin(PuzzlePlugin)
             .add_plugin(InternalAudioPlugin);
         app.add_plugin(ShapePlugin);
-        app.on_state_enter(STAGE, AppState::Restart, switch_to_game.system());
+        app.add_system_set(
+            SystemSet::on_enter(AppState::Restart).with_system(switch_to_game.system()),
+        );
     }
 }
 
 fn switch_to_game(mut state: ResMut<State<AppState>>) {
-    state.set_next(AppState::InGame).unwrap();
+    state.set(AppState::InGame).unwrap();
 }
