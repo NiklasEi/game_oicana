@@ -34,9 +34,10 @@ pub enum AppState {
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.insert_resource(ClearColor(Color::BLACK))
-            .add_state(AppState::Loading).add_plugin(ShapePlugin)
-            .add_plugin(MenuPlugin)
+            .add_state(AppState::Loading)
             .add_plugin(LoadingPlugin)
+            .add_plugin(ShapePlugin)
+            .add_plugin(MenuPlugin)
             .add_plugin(MapPlugin)
             .add_plugin(EnemiesPlugin)
             .add_plugin(TowersPlugin)

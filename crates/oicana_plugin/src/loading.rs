@@ -1,130 +1,66 @@
-mod paths;
-
-use crate::loading::paths::PATHS;
 use crate::map::Tile;
 use crate::AppState;
 use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy_kira_audio::AudioSource;
+use bevy_asset_loader::{AssetCollection, AssetLoader};
 
 pub struct LoadingPlugin;
 
 impl Plugin for LoadingPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system_set(
-            SystemSet::on_enter(AppState::Loading).with_system(start_loading.system()),
-        )
-        .add_system_set(SystemSet::on_update(AppState::Loading).with_system(check_state.system()));
+        AssetLoader::new(AppState::Loading, AppState::Menu)
+            .with_collection::<FontAssets>()
+            .with_collection::<AudioAssets>()
+            .with_collection::<TextureAssets>()
+            .build(app);
     }
 }
 
-pub struct LoadingState {
-    sound: Vec<HandleUntyped>,
-    textures: Vec<HandleUntyped>,
-    fonts: Vec<HandleUntyped>,
-}
-
+#[derive(AssetCollection)]
 pub struct FontAssets {
+    #[asset(path = "fonts/FiraSans-Bold.ttf")]
     pub fira_sans: Handle<Font>,
 }
 
+#[derive(AssetCollection)]
 pub struct AudioAssets {
+    #[asset(path = "sounds/background.ogg")]
     pub background: Handle<AudioSource>,
+    #[asset(path = "sounds/shot.ogg")]
     pub tower_shots: Handle<AudioSource>,
+    #[asset(path = "sounds/enemybreach.ogg")]
     pub enemy_breach: Handle<AudioSource>,
 }
 
+#[derive(AssetCollection)]
 pub struct TextureAssets {
-    pub empty_handle: Handle<Texture>,
-    pub tower_plot_handle: Handle<Texture>,
-    pub tower_handle: Handle<Texture>,
-    pub path_handle: Handle<Texture>,
-    pub castle_handle: Handle<Texture>,
-    pub cloud_handle: Handle<Texture>,
-    pub spawn_handle: Handle<Texture>,
+    #[asset(path = "textures/blank.png")]
+    pub blank: Handle<Texture>,
+    #[asset(path = "textures/towerplot.png")]
+    pub tower_plot: Handle<Texture>,
+    #[asset(path = "textures/tower.png")]
+    pub tower: Handle<Texture>,
+    #[asset(path = "textures/path.png")]
+    pub path: Handle<Texture>,
+    #[asset(path = "textures/castle.png")]
+    pub castle: Handle<Texture>,
+    #[asset(path = "textures/cloud.png")]
+    pub cloud: Handle<Texture>,
+    #[asset(path = "textures/spawn.png")]
+    pub spawn: Handle<Texture>,
 }
 
 impl TextureAssets {
     pub fn get_handle_for_tile(&self, tile: &Tile) -> Handle<Texture> {
         match tile {
-            &Tile::Empty => self.empty_handle.clone(),
-            &Tile::TowerPlot => self.tower_plot_handle.clone(),
-            &Tile::Tower => self.tower_handle.clone(),
-            &Tile::Path => self.path_handle.clone(),
-            &Tile::Castle => self.castle_handle.clone(),
-            &Tile::Cloud => self.cloud_handle.clone(),
-            &Tile::Spawn => self.spawn_handle.clone(),
+            &Tile::Empty => self.blank.clone(),
+            &Tile::TowerPlot => self.tower_plot.clone(),
+            &Tile::Tower => self.tower.clone(),
+            &Tile::Path => self.path.clone(),
+            &Tile::Castle => self.castle.clone(),
+            &Tile::Cloud => self.cloud.clone(),
+            &Tile::Spawn => self.spawn.clone(),
         }
     }
-}
-
-fn start_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let mut fonts: Vec<HandleUntyped> = vec![];
-    fonts.push(asset_server.load_untyped(PATHS.fira_sans));
-
-    let mut sound: Vec<HandleUntyped> = vec![];
-    sound.push(asset_server.load_untyped(PATHS.sound_background));
-    sound.push(asset_server.load_untyped(PATHS.sound_enemy_breach));
-    sound.push(asset_server.load_untyped(PATHS.sound_tower_shots));
-
-    let mut textures: Vec<HandleUntyped> = vec![];
-    textures.push(asset_server.load_untyped(PATHS.texture_empty));
-    textures.push(asset_server.load_untyped(PATHS.texture_tower_plot));
-    textures.push(asset_server.load_untyped(PATHS.texture_tower));
-    textures.push(asset_server.load_untyped(PATHS.texture_path));
-    textures.push(asset_server.load_untyped(PATHS.texture_castle));
-    textures.push(asset_server.load_untyped(PATHS.texture_cloud));
-    textures.push(asset_server.load_untyped(PATHS.texture_spawn));
-
-    commands.insert_resource(LoadingState {
-        sound,
-        textures,
-        fonts,
-    });
-}
-
-fn check_state(
-    mut state: ResMut<State<AppState>>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    loading_state: Res<LoadingState>,
-) {
-    if LoadState::Loaded
-        != asset_server.get_group_load_state(loading_state.fonts.iter().map(|handle| handle.id))
-    {
-        return;
-    }
-    if LoadState::Loaded
-        != asset_server.get_group_load_state(loading_state.sound.iter().map(|handle| handle.id))
-    {
-        return;
-    }
-    if LoadState::Loaded
-        != asset_server.get_group_load_state(loading_state.textures.iter().map(|handle| handle.id))
-    {
-        return;
-    }
-
-    commands.insert_resource(FontAssets {
-        fira_sans: asset_server.get_handle(PATHS.fira_sans),
-    });
-
-    commands.insert_resource(AudioAssets {
-        background: asset_server.get_handle(PATHS.sound_background),
-        tower_shots: asset_server.get_handle(PATHS.sound_tower_shots),
-        enemy_breach: asset_server.get_handle(PATHS.sound_enemy_breach),
-    });
-
-    commands.insert_resource(TextureAssets {
-        empty_handle: asset_server.get_handle(PATHS.texture_empty),
-        tower_plot_handle: asset_server.get_handle(PATHS.texture_tower_plot),
-        tower_handle: asset_server.get_handle(PATHS.texture_tower),
-        path_handle: asset_server.get_handle(PATHS.texture_path),
-        castle_handle: asset_server.get_handle(PATHS.texture_castle),
-        cloud_handle: asset_server.get_handle(PATHS.texture_cloud),
-        spawn_handle: asset_server.get_handle(PATHS.texture_spawn),
-    });
-
-    println!("loading done");
-    state.set(AppState::Menu).unwrap();
 }

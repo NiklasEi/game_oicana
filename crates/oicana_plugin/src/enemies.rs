@@ -153,7 +153,6 @@ fn spawn_enemies(
     let mut rng = rand::thread_rng();
     let percent: i32 = rng.gen_range(0..50); // generates a float between 0 and 1
     health += percent * one_percent;
-    println!("Spawning {:?}", form);
     match form {
         EnemyForm::Circle => create_circle_enemy(&mut commands, color, &map, health),
         EnemyForm::Quadratic => create_quadratic_enemy(&mut commands, color, &map, health),

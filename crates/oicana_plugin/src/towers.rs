@@ -131,7 +131,7 @@ fn build_and_upgrade_towers(
                 if transform.translation.x == coordinate.x
                     && transform.translation.y == coordinate.y
                 {
-                    *material = materials.add(texture_assets.tower_handle.clone().into())
+                    *material = materials.add(texture_assets.tower.clone().into())
                 }
             }
             commands
