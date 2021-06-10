@@ -28,7 +28,7 @@ web = [
 bevy = {version="0.5.0", default-features = false}
 bevy_webgl2 = {version="0.5.0", optional = true}
 winit = "0.24.0"
-oicana_plugin = { path = "crates/oicana_plugin", version = "0.1.0" }
+oicana_plugin = { path = "oicana_plugin", version = "0.1.0" }
 
 [build-dependencies]
 embed-resource = "1.4"
