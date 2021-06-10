@@ -34,7 +34,7 @@ pub enum AppState {
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.insert_resource(ClearColor(Color::BLACK))
-            .add_state(AppState::Loading)
+            .add_state(AppState::Loading).add_plugin(ShapePlugin)
             .add_plugin(MenuPlugin)
             .add_plugin(LoadingPlugin)
             .add_plugin(MapPlugin)
@@ -44,7 +44,6 @@ impl Plugin for GamePlugin {
             .add_plugin(UiPlugin)
             .add_plugin(PuzzlePlugin)
             .add_plugin(InternalAudioPlugin);
-        app.add_plugin(ShapePlugin);
         app.add_system_set(
             SystemSet::on_enter(AppState::Restart).with_system(switch_to_game.system()),
         );

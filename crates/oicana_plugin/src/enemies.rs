@@ -44,8 +44,11 @@ pub struct Enemy {
     pub color: EnemyColor,
     color_map: HashMap<i32, Color>,
     pub travelled: f32,
-    pub health: i32,
     pub max_health: i32,
+}
+
+pub struct Health {
+    pub value: i32
 }
 
 pub struct Trees {
@@ -53,19 +56,19 @@ pub struct Trees {
 }
 
 impl Enemy {
-    pub fn get_color(&mut self) -> Color {
-        let cached_color = self.color_map.get(&self.health);
+    pub fn get_color(&mut self, health: i32) -> Color {
+        let cached_color = self.color_map.get(&health);
         if let Some(&color) = cached_color {
             return color.clone();
         }
-        let health_factor = if self.health > 0 {
-            self.health as f32 / self.max_health as f32
+        let health_factor = if health > 0 {
+            health as f32 / self.max_health as f32
         } else {
             0.
         };
         let full_color = Color::GRAY * health_factor + self.color.to_color() * (1. - health_factor);
 
-        self.color_map.insert(self.health, full_color.clone());
+        self.color_map.insert(health, full_color.clone());
         full_color
     }
 }
@@ -163,7 +166,6 @@ fn create_circle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map
     let mut enemy = Enemy {
         current_waypoint_index: 0,
         form: EnemyForm::Circle,
-        health,
         max_health: health,
         color_map: HashMap::default(),
         color,
@@ -173,13 +175,13 @@ fn create_circle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map
         .spawn_bundle(GeometryBuilder::build_as(
             &geometry,
             ShapeColors {
-                main: enemy.get_color(),
+                main: enemy.get_color(health),
                 outline: Color::DARK_GRAY,
             },
             DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .insert(enemy);
+        .insert(enemy).insert(Health {value: health});
 }
 
 pub fn build_circle_path() -> impl Geometry {
@@ -191,7 +193,6 @@ pub fn build_circle_path() -> impl Geometry {
 fn create_triangle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
     let geometry = build_triangle_path();
     let mut enemy = Enemy {
-        health,
         max_health: health,
         current_waypoint_index: 0,
         form: EnemyForm::Triangle,
@@ -203,13 +204,13 @@ fn create_triangle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<M
         .spawn_bundle(GeometryBuilder::build_as(
             &geometry,
             ShapeColors {
-                main: enemy.get_color(),
+                main: enemy.get_color(health),
                 outline: Color::DARK_GRAY,
             },
             DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .insert(enemy);
+        .insert(enemy).insert(Health {value: health});
 }
 
 pub fn build_triangle_path() -> impl Geometry {
@@ -231,7 +232,6 @@ fn create_quadratic_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<
     builder.add(&rectangle);
 
     let mut enemy = Enemy {
-        health,
         max_health: health,
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
@@ -242,13 +242,13 @@ fn create_quadratic_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<
     commands
         .spawn_bundle(builder.build(
             ShapeColors {
-                main: enemy.get_color(),
+                main: enemy.get_color(health),
                 outline: Color::DARK_GRAY,
             },
             DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .insert(enemy);
+        .insert(enemy).insert(Health {value: health});
 }
 
 fn remove_enemies(
@@ -256,10 +256,10 @@ fn remove_enemies(
     map: Res<Map>,
     mut game_state: ResMut<GameState>,
     mut enemy_breach: EventWriter<EnemyBreach>,
-    enemy_query: Query<(Entity, &Enemy), Without<Tameable>>,
+    enemy_query: Query<(Entity, &Enemy, &Health), Without<Tameable>>,
 ) {
-    for (entity, enemy) in enemy_query.iter() {
-        if enemy.health < 0 {
+    for (entity, enemy, health) in enemy_query.iter() {
+        if health.value < 0 {
             if game_state.health > 0 {
                 game_state.score += enemy.max_health as usize;
             }
@@ -280,20 +280,17 @@ fn remove_enemies(
 fn update_enemies(
     time: Res<Time>,
     map: Res<Map>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut enemy_query: Query<
-        (&mut Enemy, &mut Transform, &mut Handle<ColorMaterial>), // Todo
+        (&mut Enemy, &mut Transform),
         Without<Tameable>,
     >,
 ) {
     let delta = time.delta().as_millis() as f32;
     let speed = 0.1;
-    println!("move!");
-    for (mut enemy, mut transform, mut color) in enemy_query.iter_mut() {
+    for (mut enemy, mut transform) in enemy_query.iter_mut() {
         if enemy.current_waypoint_index >= map.waypoints.len() {
             continue;
         }
-        *color = materials.add(enemy.get_color().into());
         let destination = map.waypoints.get(enemy.current_waypoint_index).unwrap();
         let distance = Vec3::new(destination.x, destination.y, 0.) - transform.translation;
         if distance == Vec3::ZERO {
@@ -301,7 +298,6 @@ fn update_enemies(
             continue;
         }
         let movement = distance.normalize() * delta * speed;
-        println!("moving {:?}", movement);
         if movement.length() > distance.length() {
             transform.translation = Vec3::new(destination.x, destination.y, 0.);
             enemy.travelled += distance.length();
@@ -311,6 +307,11 @@ fn update_enemies(
             transform.translation += movement;
         }
     }
+}
+
+fn update_enemy_colors(mut commands: Commands,
+                       mut materials: ResMut<Assets<ColorMaterial>>,) {
+
 }
 
 fn update_tamable_enemies(

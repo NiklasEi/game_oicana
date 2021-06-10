@@ -7,7 +7,7 @@ use oicana_plugin::GamePlugin;
 #[cfg(target_arch = "wasm32")]
 use bevy_webgl2;
 
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+// use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 #[bevy_main]
 fn main() {
@@ -24,8 +24,8 @@ fn main() {
     #[cfg(target_arch = "wasm32")]
     app.add_plugin(bevy_webgl2::WebGL2Plugin);
 
-    app.add_plugin(FrameTimeDiagnosticsPlugin::default());
-    app.add_plugin(LogDiagnosticsPlugin::default());
+    // app.add_plugin(FrameTimeDiagnosticsPlugin::default());
+    // app.add_plugin(LogDiagnosticsPlugin::default());
 
     app.add_plugin(GamePlugin).run();
 }

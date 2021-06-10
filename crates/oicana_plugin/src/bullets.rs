@@ -1,4 +1,4 @@
-use crate::enemies::{Enemy, Tameable};
+use crate::enemies::{Tameable, Health};
 use crate::AppState;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
@@ -26,16 +26,16 @@ pub struct Bullet {
 fn update_bullets(
     mut commands: Commands,
     mut bullet_query: Query<(Entity, &Bullet, &mut Transform)>,
-    mut enemy_query: Query<(&mut Enemy, &Transform), (Without<Tameable>, Without<Bullet>)>,
+    mut enemy_query: Query<(&Transform, &mut Health), (Without<Tameable>, Without<Bullet>)>,
     time: Res<Time>,
 ) {
     let delta = time.delta().as_secs_f32();
     for (entity, bullet, mut transform) in bullet_query.iter_mut() {
         let target = enemy_query.get_mut(bullet.target);
-        if let Ok((mut target, target_transform)) = target {
+        if let Ok((target_transform, mut health)) = target {
             let distance = target_transform.translation - transform.translation;
             if distance.length() < bullet.speed * delta {
-                target.health -= bullet.damage;
+                health.value -= bullet.damage;
                 commands.entity(entity).despawn();
             } else {
                 let movement = distance.normalize() * bullet.speed * delta;

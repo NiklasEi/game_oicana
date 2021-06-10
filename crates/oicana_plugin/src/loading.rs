@@ -125,5 +125,6 @@ fn check_state(
         spawn_handle: asset_server.get_handle(PATHS.texture_spawn),
     });
 
+    println!("loading done");
     state.set(AppState::Menu).unwrap();
 }
