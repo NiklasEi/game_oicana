@@ -204,10 +204,9 @@ fn render_map(
     for row in 0..map.height {
         for column in 0..map.width {
             let tile = &map.tiles[row][column];
-            let handle = texture_assets.get_handle_for_tile(tile);
             commands
                 .spawn_bundle(SpriteBundle {
-                    material: materials.add(handle.into()),
+                    material: materials.add(texture_assets.get_handle_for_tile(tile).clone().into()),
                     transform: Transform::from_translation(Vec3::new(
                         column as f32 * map.tile_size,
                         row as f32 * map.tile_size,
