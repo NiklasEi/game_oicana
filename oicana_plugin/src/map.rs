@@ -11,12 +11,9 @@ impl Plugin for MapPlugin {
         app.insert_resource(map.gather_trees())
             .insert_resource(map)
             .add_system_set(
-                SystemSet::on_enter(AppState::InGame)
+                SystemSet::on_enter(AppState::Menu)
                     .with_system(render_map.system())
                     .with_system(setup_camera.system()),
-            )
-            .add_system_set(
-                SystemSet::on_exit(AppState::InGame).with_system(break_down_map.system()),
             );
     }
 }
@@ -206,7 +203,8 @@ fn render_map(
             let tile = &map.tiles[row][column];
             commands
                 .spawn_bundle(SpriteBundle {
-                    material: materials.add(texture_assets.get_handle_for_tile(tile).clone().into()),
+                    material: materials
+                        .add(texture_assets.get_handle_for_tile(tile).clone().into()),
                     transform: Transform::from_translation(Vec3::new(
                         column as f32 * map.tile_size,
                         row as f32 * map.tile_size,
@@ -220,11 +218,5 @@ fn render_map(
                     tile: tile.clone(),
                 });
         }
-    }
-}
-
-fn break_down_map(mut commands: Commands, tile_query: Query<Entity, With<Tile>>) {
-    for entity in tile_query.iter() {
-        commands.entity(entity).despawn();
     }
 }
