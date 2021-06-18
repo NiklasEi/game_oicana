@@ -745,9 +745,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_webgl2"
-version = "0.5.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c798cc87d7730835c1ead2887be5bd46213faa5e698f839d5643354e10901b0"
+checksum = "6e7ecb1db94543ec88d1a47981a4be29039f810f41095e22690584d69075bb14"
 dependencies = [
  "bevy",
  "cfg-if 1.0.0",
