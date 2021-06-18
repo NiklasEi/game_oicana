@@ -31,6 +31,11 @@ pub enum AppState {
     Menu,
 }
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
+pub enum OicanaStage {
+    EnemyRemoval,
+}
+
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.insert_resource(ClearColor(Color::BLACK))

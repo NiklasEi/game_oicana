@@ -1,10 +1,13 @@
 use crate::map::{Coordinate, Map};
 use crate::puzzle::CurrentPiece;
 use crate::ui::GameState;
-use crate::AppState;
+use crate::{AppState, OicanaStage};
 use bevy::prelude::*;
+use bevy::render::render_graph::Stages;
 use bevy::utils::{HashMap, Instant};
+use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
+use lyon_tessellation::path::Path;
 use rand::distributions::Standard;
 use rand::prelude::*;
 use std::f32::consts::PI;
@@ -17,17 +20,42 @@ impl Plugin for EnemiesPlugin {
             last_spawn: Instant::now(),
         })
         .add_event::<EnemyBreach>()
+        .add_stage_after(
+            CoreStage::Update,
+            OicanaStage::EnemyRemoval,
+            SystemStage::parallel(),
+        )
+        .add_state_to_stage(OicanaStage::EnemyRemoval, AppState::Loading)
+        .add_system_set_to_stage(
+            OicanaStage::EnemyRemoval,
+            SystemSet::on_update(AppState::InGame).with_system(remove_enemies.system()),
+        )
         .add_system_set(
             SystemSet::on_update(AppState::InGame)
-                .with_system(remove_enemies.system())
-                .with_system(spawn_enemies.system())
-                .with_system(update_tamable_enemies.system())
-                .with_system(update_enemies.system()),
+                .with_system(
+                    update_enemy_colors
+                        .system()
+                        .label(EnemyLabels::UpdateColor)
+                        .after(EnemyLabels::Damage),
+                )
+                .with_system(spawn_enemies.system().before(EnemyLabels::UpdateColor))
+                .with_system(
+                    update_tamable_enemies
+                        .system()
+                        .before(EnemyLabels::UpdateColor),
+                )
+                .with_system(update_enemies.system().before(EnemyLabels::UpdateColor)),
         )
         .add_system_set(
             SystemSet::on_exit(AppState::InGame).with_system(break_down_enemies.system()),
         );
     }
+}
+
+#[derive(SystemLabel, Clone, Hash, Debug, Eq, PartialEq)]
+pub enum EnemyLabels {
+    UpdateColor,
+    Damage,
 }
 
 pub struct EnemyBreach;
@@ -38,17 +66,19 @@ struct WaveState {
 
 pub struct Tameable;
 
+#[derive(Clone)]
 pub struct Enemy {
     current_waypoint_index: usize,
     pub form: EnemyForm,
     pub color: EnemyColor,
-    color_map: HashMap<i32, Color>,
+    pub colored_health: i32,
     pub travelled: f32,
     pub max_health: i32,
 }
 
+#[derive(Clone)]
 pub struct Health {
-    pub value: i32
+    pub value: i32,
 }
 
 pub struct Trees {
@@ -56,20 +86,13 @@ pub struct Trees {
 }
 
 impl Enemy {
-    pub fn get_color(&mut self, health: i32) -> Color {
-        let cached_color = self.color_map.get(&health);
-        if let Some(&color) = cached_color {
-            return color.clone();
-        }
+    pub fn get_color(&self, health: i32) -> Color {
         let health_factor = if health > 0 {
             health as f32 / self.max_health as f32
         } else {
             0.
         };
-        let full_color = Color::GRAY * health_factor + self.color.to_color() * (1. - health_factor);
-
-        self.color_map.insert(health, full_color.clone());
-        full_color
+        Color::GRAY * health_factor + self.color.to_color() * (1. - health_factor)
     }
 }
 
@@ -78,6 +101,16 @@ pub enum EnemyForm {
     Circle,
     Triangle,
     Quadratic,
+}
+
+impl EnemyForm {
+    pub fn get_geometry(&self) -> Path {
+        match self {
+            EnemyForm::Circle => build_circle_path(),
+            EnemyForm::Triangle => build_triangle_path(),
+            EnemyForm::Quadratic => build_rectangle_path(),
+        }
+    }
 }
 
 impl Distribution<EnemyForm> for Standard {
@@ -166,7 +199,7 @@ fn create_circle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map
         current_waypoint_index: 0,
         form: EnemyForm::Circle,
         max_health: health,
-        color_map: HashMap::default(),
+        colored_health: health,
         color,
         travelled: 0.,
     };
@@ -180,10 +213,11 @@ fn create_circle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map
             DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .insert(enemy).insert(Health {value: health});
+        .insert(enemy)
+        .insert(Health { value: health });
 }
 
-pub fn build_circle_path() -> impl Geometry {
+pub fn build_circle_path() -> Path {
     let mut builder = PathBuilder::new();
     builder.arc(Vec2::new(0.001, 0.001), Vec2::new(10.0, 10.0), 2. * PI, 0.0);
     builder.build()
@@ -193,9 +227,9 @@ fn create_triangle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<M
     let geometry = build_triangle_path();
     let mut enemy = Enemy {
         max_health: health,
+        colored_health: health,
         current_waypoint_index: 0,
         form: EnemyForm::Triangle,
-        color_map: HashMap::default(),
         color,
         travelled: 0.,
     };
@@ -209,10 +243,11 @@ fn create_triangle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<M
             DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .insert(enemy).insert(Health {value: health});
+        .insert(enemy)
+        .insert(Health { value: health });
 }
 
-pub fn build_triangle_path() -> impl Geometry {
+pub fn build_triangle_path() -> Path {
     let mut builder = PathBuilder::new();
     builder.move_to(Vec2::new(-5., 9.));
     builder.line_to(Vec2::new(-5., -9.));
@@ -222,24 +257,19 @@ pub fn build_triangle_path() -> impl Geometry {
 }
 
 fn create_quadratic_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
-    let rectangle = shapes::Rectangle {
-        width: 18.0,
-        height: 18.0,
-        ..shapes::Rectangle::default()
-    };
-    let mut builder = GeometryBuilder::new();
-    builder.add(&rectangle);
+    let geometry = build_rectangle_path();
 
     let mut enemy = Enemy {
         max_health: health,
+        colored_health: health,
         current_waypoint_index: 0,
         form: EnemyForm::Quadratic,
         color,
-        color_map: HashMap::default(),
         travelled: 0.,
     };
     commands
-        .spawn_bundle(builder.build(
+        .spawn_bundle(GeometryBuilder::build_as(
+            &geometry,
             ShapeColors {
                 main: enemy.get_color(health),
                 outline: Color::DARK_GRAY,
@@ -247,7 +277,19 @@ fn create_quadratic_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<
             DrawMode::Fill(FillOptions::default()),
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
         ))
-        .insert(enemy).insert(Health {value: health});
+        .insert(enemy)
+        .insert(Health { value: health });
+}
+
+pub fn build_rectangle_path() -> Path {
+    let mut builder = Path::builder();
+    shapes::Rectangle {
+        width: 18.0,
+        height: 18.0,
+        ..shapes::Rectangle::default()
+    }
+    .add_geometry(&mut builder);
+    builder.build()
 }
 
 fn remove_enemies(
@@ -279,10 +321,7 @@ fn remove_enemies(
 fn update_enemies(
     time: Res<Time>,
     map: Res<Map>,
-    mut enemy_query: Query<
-        (&mut Enemy, &mut Transform),
-        Without<Tameable>,
-    >,
+    mut enemy_query: Query<(&mut Enemy, &mut Transform), Without<Tameable>>,
 ) {
     let delta = time.delta().as_millis() as f32;
     let speed = 0.1;
@@ -308,9 +347,34 @@ fn update_enemies(
     }
 }
 
-fn update_enemy_colors(mut commands: Commands,
-                       mut materials: ResMut<Assets<ColorMaterial>>,) {
-
+fn update_enemy_colors(
+    mut commands: Commands,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    damaged_enemies: Query<(Entity, &Health, &Enemy, &Transform), Changed<Health>>,
+) {
+    let mut count = 0;
+    for (entity, health, enemy, transform) in damaged_enemies.iter() {
+        if health.value == enemy.colored_health {
+            continue;
+        }
+        count += 1;
+        commands.entity(entity).despawn();
+        commands
+            .spawn_bundle(GeometryBuilder::build_as(
+                &enemy.form.get_geometry(),
+                ShapeColors {
+                    main: enemy.get_color(health.value),
+                    outline: Color::DARK_GRAY,
+                },
+                DrawMode::Fill(FillOptions::default()),
+                transform.clone(),
+            ))
+            .insert(Enemy {
+                colored_health: health.value,
+                ..enemy.clone()
+            })
+            .insert(health.clone());
+    }
 }
 
 fn update_tamable_enemies(

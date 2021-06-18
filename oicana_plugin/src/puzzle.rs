@@ -180,7 +180,7 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
                         .with_line_width(2.)
                         .with_line_join(LineJoin::Round),
                 ),
-                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
             ),
             EnemyForm::Triangle => GeometryBuilder::build_as(
                 &build_triangle_path(),
@@ -193,7 +193,7 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
                         .with_line_width(2.)
                         .with_line_join(LineJoin::Round),
                 ),
-                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
             ),
             EnemyForm::Quadratic => {
                 let rectangle = shapes::Rectangle {
@@ -212,7 +212,7 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
                             .with_line_width(2.)
                             .with_line_join(LineJoin::Round),
                     ),
-                    Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
+                    Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
                 )
             }
         };

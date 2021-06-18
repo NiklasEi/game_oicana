@@ -1,4 +1,4 @@
-use crate::enemies::{Tameable, Health};
+use crate::enemies::{EnemyLabels, Health, Tameable};
 use crate::AppState;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
@@ -9,7 +9,8 @@ pub struct BulletPlugin;
 impl Plugin for BulletPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_system_set(
-            SystemSet::on_update(AppState::InGame).with_system(update_bullets.system()),
+            SystemSet::on_update(AppState::InGame)
+                .with_system(update_bullets.system().label(EnemyLabels::Damage)),
         )
         .add_system_set(
             SystemSet::on_exit(AppState::InGame).with_system(break_down_bullets.system()),

@@ -2235,9 +2235,9 @@ dependencies = [
 
 [[package]]
 name = "lyon_tessellation"
-version = "0.17.2"
+version = "0.17.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93732ae9fc5dfcd0dc7ac56ac81ed9f04be3ee74a85589eae95cc428466d25b8"
+checksum = "23ba0dd2ed50c10d5f4c63a310db56c6a7326f6bedfd6200dc3ccb7ae8a061b7"
 dependencies = [
  "arrayvec",
  "lyon_path",
@@ -2673,6 +2673,7 @@ dependencies = [
  "bevy_asset_loader",
  "bevy_kira_audio",
  "bevy_prototype_lyon",
+ "lyon_tessellation",
  "rand 0.8.3",
 ]
 
