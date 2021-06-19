@@ -3,9 +3,7 @@ use crate::puzzle::CurrentPiece;
 use crate::ui::GameState;
 use crate::{AppState, OicanaStage};
 use bevy::prelude::*;
-use bevy::render::render_graph::Stages;
-use bevy::utils::{HashMap, Instant};
-use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy::utils::Instant;
 use bevy_prototype_lyon::prelude::*;
 use lyon_tessellation::path::Path;
 use rand::distributions::Standard;
@@ -71,6 +69,7 @@ pub struct Enemy {
     current_waypoint_index: usize,
     pub form: EnemyForm,
     pub color: EnemyColor,
+    pub bullets: Vec<Entity>,
     pub colored_health: i32,
     pub travelled: f32,
     pub max_health: i32,
@@ -93,23 +92,6 @@ impl Enemy {
             0.
         };
         Color::GRAY * health_factor + self.color.to_color() * (1. - health_factor)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum EnemyForm {
-    Circle,
-    Triangle,
-    Quadratic,
-}
-
-impl EnemyForm {
-    pub fn get_geometry(&self) -> Path {
-        match self {
-            EnemyForm::Circle => build_circle_path(),
-            EnemyForm::Triangle => build_triangle_path(),
-            EnemyForm::Quadratic => build_rectangle_path(),
-        }
     }
 }
 
@@ -186,26 +168,28 @@ fn spawn_enemies(
     let mut rng = rand::thread_rng();
     let percent: i32 = rng.gen_range(0..50); // generates a float between 0 and 1
     health += percent * one_percent;
-    match form {
-        EnemyForm::Circle => create_circle_enemy(&mut commands, color, &map, health),
-        EnemyForm::Quadratic => create_quadratic_enemy(&mut commands, color, &map, health),
-        EnemyForm::Triangle => create_triangle_enemy(&mut commands, color, &map, health),
-    }
+    create_enemy(&mut commands, color, &map, health, form);
 }
 
-fn create_circle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
-    let geometry = build_circle_path();
-    let mut enemy = Enemy {
+fn create_enemy(
+    commands: &mut Commands,
+    color: EnemyColor,
+    map: &Res<Map>,
+    health: i32,
+    form: EnemyForm,
+) {
+    let enemy = Enemy {
         current_waypoint_index: 0,
-        form: EnemyForm::Circle,
+        form: form.clone(),
         max_health: health,
+        bullets: vec![],
         colored_health: health,
         color,
         travelled: 0.,
     };
     commands
         .spawn_bundle(GeometryBuilder::build_as(
-            &geometry,
+            &form.get_geometry(),
             ShapeColors {
                 main: enemy.get_color(health),
                 outline: Color::DARK_GRAY,
@@ -215,36 +199,29 @@ fn create_circle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map
         ))
         .insert(enemy)
         .insert(Health { value: health });
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum EnemyForm {
+    Circle,
+    Triangle,
+    Quadratic,
+}
+
+impl EnemyForm {
+    pub fn get_geometry(&self) -> Path {
+        match self {
+            EnemyForm::Circle => build_circle_path(),
+            EnemyForm::Triangle => build_triangle_path(),
+            EnemyForm::Quadratic => build_rectangle_path(),
+        }
+    }
 }
 
 pub fn build_circle_path() -> Path {
     let mut builder = PathBuilder::new();
     builder.arc(Vec2::new(0.001, 0.001), Vec2::new(10.0, 10.0), 2. * PI, 0.0);
     builder.build()
-}
-
-fn create_triangle_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
-    let geometry = build_triangle_path();
-    let mut enemy = Enemy {
-        max_health: health,
-        colored_health: health,
-        current_waypoint_index: 0,
-        form: EnemyForm::Triangle,
-        color,
-        travelled: 0.,
-    };
-    commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &geometry,
-            ShapeColors {
-                main: enemy.get_color(health),
-                outline: Color::DARK_GRAY,
-            },
-            DrawMode::Fill(FillOptions::default()),
-            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
-        ))
-        .insert(enemy)
-        .insert(Health { value: health });
 }
 
 pub fn build_triangle_path() -> Path {
@@ -254,31 +231,6 @@ pub fn build_triangle_path() -> Path {
     builder.line_to(Vec2::new(10., 0.));
     builder.line_to(Vec2::new(-5., 9.));
     builder.build()
-}
-
-fn create_quadratic_enemy(commands: &mut Commands, color: EnemyColor, map: &Res<Map>, health: i32) {
-    let geometry = build_rectangle_path();
-
-    let mut enemy = Enemy {
-        max_health: health,
-        colored_health: health,
-        current_waypoint_index: 0,
-        form: EnemyForm::Quadratic,
-        color,
-        travelled: 0.,
-    };
-    commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &geometry,
-            ShapeColors {
-                main: enemy.get_color(health),
-                outline: Color::DARK_GRAY,
-            },
-            DrawMode::Fill(FillOptions::default()),
-            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
-        ))
-        .insert(enemy)
-        .insert(Health { value: health });
 }
 
 pub fn build_rectangle_path() -> Path {
@@ -297,20 +249,26 @@ fn remove_enemies(
     map: Res<Map>,
     mut game_state: ResMut<GameState>,
     mut enemy_breach: EventWriter<EnemyBreach>,
-    enemy_query: Query<(Entity, &Enemy, &Health), Without<Tameable>>,
+    mut enemy_query: Query<(Entity, &mut Enemy, &Health), Without<Tameable>>,
 ) {
-    for (entity, enemy, health) in enemy_query.iter() {
+    for (entity, mut enemy, health) in enemy_query.iter_mut() {
         if health.value < 0 {
             if game_state.health > 0 {
                 game_state.score += enemy.max_health as usize;
             }
             commands.entity(entity).insert(Tameable);
+            for id in enemy.bullets.drain(..) {
+                commands.entity(id).despawn();
+            }
             continue;
         }
         if enemy.current_waypoint_index >= map.waypoints.len() {
             if game_state.health > 0 {
                 game_state.health -= 1;
                 enemy_breach.send(EnemyBreach);
+            }
+            for id in enemy.bullets.drain(..) {
+                commands.entity(id).despawn();
             }
             commands.entity(entity).despawn();
             continue;
@@ -349,15 +307,12 @@ fn update_enemies(
 
 fn update_enemy_colors(
     mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     damaged_enemies: Query<(Entity, &Health, &Enemy, &Transform), Changed<Health>>,
 ) {
-    let mut count = 0;
     for (entity, health, enemy, transform) in damaged_enemies.iter() {
         if health.value == enemy.colored_health {
             continue;
         }
-        count += 1;
         commands.entity(entity).despawn();
         commands
             .spawn_bundle(GeometryBuilder::build_as(

@@ -94,12 +94,14 @@ fn shoot(
                 });
 
             if let Some((target, _)) = furthest_target {
+                let (_, _, mut enemy) = enemies_query.get_mut(target).unwrap();
                 let bullet = Bullet {
                     damage: tower.damage,
                     speed: tower.speed,
-                    target,
                 };
-                spawn_bullet(&mut commands, bullet, tower_pos.translation);
+                enemy
+                    .bullets
+                    .push(spawn_bullet(&mut commands, bullet, tower_pos.translation));
                 tower_shot.send(TowerShot);
             }
         }
@@ -150,8 +152,22 @@ fn build_and_upgrade_towers(
     }
 }
 
-fn break_down_towers(mut commands: Commands, tower_query: Query<Entity, With<Tower>>) {
-    for entity in tower_query.iter() {
+fn break_down_towers(
+    mut commands: Commands,
+    tower_query: Query<(Entity, &Tower)>,
+    mut map_tiles_query: Query<(&Transform, &mut Handle<ColorMaterial>, &MapTile)>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    texture_assets: Res<TextureAssets>,
+) {
+    for (entity, tower) in tower_query.iter() {
+        for (transform, mut material, map_tile) in map_tiles_query.iter_mut() {
+            if transform.translation.x == tower.coordinate.x
+                && transform.translation.y == tower.coordinate.y
+                && map_tile.tile != Tile::Tower
+            {
+                *material = materials.add(texture_assets.tower_plot.clone().into())
+            }
+        }
         commands.entity(entity).despawn();
     }
 }
