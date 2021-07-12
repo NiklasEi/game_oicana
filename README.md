@@ -4,6 +4,8 @@
 
 Oicana [is published on itch.io](https://niklme.itch.io/oicana). You can get the latest builds there or find them in [the releases of this repository](https://github.com/NiklasEi/oicana/releases).
 
+![oicana game play](oicana.png)
+
 ## Goal of the game
 
 All enemies are geometrical forms. In the beginning they are all grey, but when getting hit by your towers they will start showing color. When they are beaten, their color fully shows, and they will try to make a run for the colorful clouds on the map. During that time you can collect them by clicking on them and use them as puzzle pieces to update your towers or build new ones.
