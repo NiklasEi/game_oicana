@@ -1,5 +1,8 @@
 <!-- next-header -->
-- Add rudimentary audio support for WASM builds
+
+## [1.5.0] - 2022-01-10
+- Update to Bevy 0.6
+- Support audio for WASM
 
 ## [1.4.0] - 2021-01-20
 - retry button

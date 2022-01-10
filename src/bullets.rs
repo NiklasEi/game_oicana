@@ -68,7 +68,7 @@ pub fn spawn_bullet(commands: &mut Commands, bullet: Bullet, translation: Vec3) 
         .spawn_bundle(GeometryBuilder::build_as(
             &Circle {
                 radius: 3.,
-                center: Vec2::splat(0.)
+                center: Vec2::splat(0.),
             },
             DrawMode::Fill(FillMode::color(Color::BLACK)),
             Transform::from_translation(translation),

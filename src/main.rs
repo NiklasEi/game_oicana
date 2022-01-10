@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use bevy::prelude::*;
-use oicana_plugin::GamePlugin;
+use oicana::GamePlugin;
 
 #[bevy_main]
 fn main() {

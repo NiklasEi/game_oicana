@@ -2357,23 +2357,15 @@ dependencies = [
 
 [[package]]
 name = "oicana"
-version = "1.4.1-dev"
-dependencies = [
- "bevy",
- "embed-resource",
- "oicana_plugin",
- "winit 0.25.0",
-]
-
-[[package]]
-name = "oicana_plugin"
-version = "0.1.0"
+version = "1.5.0"
 dependencies = [
  "bevy",
  "bevy_asset_loader",
  "bevy_kira_audio",
  "bevy_prototype_lyon",
+ "embed-resource",
  "rand",
+ "winit 0.25.0",
 ]
 
 [[package]]

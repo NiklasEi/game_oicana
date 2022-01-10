@@ -1,13 +1,11 @@
-use crate::enemies::{
-    Enemy, EnemyColor, EnemyForm, Tameable,
-};
+use crate::enemies::{Enemy, EnemyColor, EnemyForm, Tameable};
 use crate::map::{Coordinate, Map, Tile};
 use crate::AppState;
 use bevy::prelude::*;
-use rand::random;
-use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes::Circle;
+use rand::random;
 
 pub struct PuzzlePlugin;
 
@@ -166,7 +164,11 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
             },
         };
 
-        let bundle: ShapeBundle = piece.form.build_bundle(Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)), piece.color.to_color(), None);
+        let bundle: ShapeBundle = piece.form.build_bundle(
+            Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
+            piece.color.to_color(),
+            None,
+        );
         commands.spawn_bundle(bundle).insert(PuzzleSlot {
             piece: piece.clone(),
             filled: false,
@@ -198,7 +200,11 @@ fn update_puzzle_slots(
             continue;
         }
 
-        let bundle: ShapeBundle = slot.piece.form.build_bundle(*transform, Color::DARK_GRAY, Some(slot.piece.color.to_color()));
+        let bundle: ShapeBundle = slot.piece.form.build_bundle(
+            *transform,
+            Color::DARK_GRAY,
+            Some(slot.piece.color.to_color()),
+        );
         commands.spawn_bundle(bundle).insert(PuzzleSlot {
             filled: true,
             ..slot.clone()
@@ -282,7 +288,7 @@ fn show_cursor(mut commands: Commands, pick_source: Res<PickSource>) {
     commands.spawn_bundle(GeometryBuilder::build_as(
         &Circle {
             radius: 3.,
-            center: Vec2::splat(0.)
+            center: Vec2::splat(0.),
         },
         DrawMode::Fill(FillMode::color(Color::BLACK)),
         Transform::from_translation(Vec3::new(

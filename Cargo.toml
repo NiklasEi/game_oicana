@@ -1,7 +1,7 @@
 [package]
 name = "oicana"
 description = "A tower-defense game with some puzzle aspects"
-version = "1.4.1-dev"
+version = "1.5.0"
 authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 publish = false
@@ -19,8 +19,11 @@ default = [
 ]
 
 [dependencies]
-bevy = {version="0.6.0", default-features = false}
-oicana_plugin = { path = "oicana_plugin", version = "0.1.0" }
+bevy = { version = "0.6.0", default-features = false}
+bevy_kira_audio = { version = "0.8" }
+bevy_asset_loader =  { version = "0.8" }
+bevy_prototype_lyon = { version = "0.4" }
+rand = { version = "0.8" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 winit = { version = "0.25", features=["x11"]}

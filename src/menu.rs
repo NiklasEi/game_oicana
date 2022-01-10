@@ -1,14 +1,13 @@
 use crate::loading::FontAssets;
+use crate::ui::ButtonColors;
 use crate::AppState;
 use bevy::prelude::*;
-use crate::ui::ButtonColors;
 
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_system_set(SystemSet::on_enter(AppState::Menu).with_system(setup_menu.system()))
+        app.add_system_set(SystemSet::on_enter(AppState::Menu).with_system(setup_menu.system()))
             .add_system_set(
                 SystemSet::on_update(AppState::Menu).with_system(click_play_button.system()),
             );
@@ -59,10 +58,7 @@ fn click_play_button(
     mut commands: Commands,
     button_colors: Res<ButtonColors>,
     mut state: ResMut<State<AppState>>,
-    mut interaction_query: Query<
-        (Entity, &Interaction, &mut UiColor, &Children),
-        With<Button>,
-    >,
+    mut interaction_query: Query<(Entity, &Interaction, &mut UiColor, &Children), With<Button>>,
     text_query: Query<Entity, With<Text>>,
 ) {
     for (button, interaction, mut color, children) in interaction_query.iter_mut() {

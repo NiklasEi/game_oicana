@@ -193,11 +193,7 @@ fn setup_camera(mut commands: Commands, map: Res<Map>) {
     commands.spawn_bundle(camera_bundle);
 }
 
-fn render_map(
-    mut commands: Commands,
-    map: Res<Map>,
-    texture_assets: Res<TextureAssets>,
-) {
+fn render_map(mut commands: Commands, map: Res<Map>, texture_assets: Res<TextureAssets>) {
     for row in 0..map.height {
         for column in 0..map.width {
             let tile = &map.tiles[row][column];

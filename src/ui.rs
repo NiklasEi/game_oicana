@@ -190,10 +190,7 @@ fn click_retry_button(
     button_colors: Res<ButtonColors>,
     mut state: ResMut<State<AppState>>,
     mut game_state: ResMut<GameState>,
-    mut interaction_query: Query<
-        (Entity, &Interaction, &mut UiColor, &Children),
-        With<Button>,
-    >,
+    mut interaction_query: Query<(Entity, &Interaction, &mut UiColor, &Children), With<Button>>,
     text_query: Query<Entity, With<Text>>,
 ) {
     for (button, interaction, mut color, children) in interaction_query.iter_mut() {

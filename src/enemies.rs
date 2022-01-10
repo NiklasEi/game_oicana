@@ -4,10 +4,10 @@ use crate::ui::GameState;
 use crate::{AppState, OicanaStage};
 use bevy::prelude::*;
 use bevy::utils::Instant;
+use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use rand::distributions::Standard;
 use rand::prelude::*;
-use bevy_prototype_lyon::entity::ShapeBundle;
 
 pub struct EnemiesPlugin;
 
@@ -188,7 +188,11 @@ fn create_enemy(
         travelled: 0.,
     };
     commands
-        .spawn_bundle(form.build_bundle(Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 1.)), enemy.get_color(health), Some(enemy.get_color(health))))
+        .spawn_bundle(form.build_bundle(
+            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 1.)),
+            enemy.get_color(health),
+            Some(enemy.get_color(health)),
+        ))
         .insert(enemy)
         .insert(Health { value: health });
 }
@@ -201,7 +205,12 @@ pub enum EnemyForm {
 }
 
 impl EnemyForm {
-    pub fn build_bundle(&self, transform: Transform, outline_color: Color, fill_color: Option<Color>) -> ShapeBundle {
+    pub fn build_bundle(
+        &self,
+        transform: Transform,
+        outline_color: Color,
+        fill_color: Option<Color>,
+    ) -> ShapeBundle {
         let shape = shapes::RegularPolygon {
             sides: match self {
                 EnemyForm::Circle => 5,
@@ -213,13 +222,13 @@ impl EnemyForm {
         };
 
         GeometryBuilder::build_as(
-                &shape,
-                DrawMode::Outlined {
-                    fill_mode: FillMode::color(fill_color.unwrap_or(Color::NONE)),
-                    outline_mode: StrokeMode::new(outline_color, 2.0),
-                },
-                transform,
-            )
+            &shape,
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(fill_color.unwrap_or(Color::NONE)),
+                outline_mode: StrokeMode::new(outline_color, 2.0),
+            },
+            transform,
+        )
     }
 }
 
