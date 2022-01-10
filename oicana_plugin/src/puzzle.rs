@@ -1,21 +1,18 @@
 use crate::enemies::{
-    build_circle_path, build_triangle_path, Enemy, EnemyColor, EnemyForm, Tameable,
+    Enemy, EnemyColor, EnemyForm, Tameable,
 };
 use crate::map::{Coordinate, Map, Tile};
 use crate::AppState;
 use bevy::prelude::*;
-use bevy_prototype_lyon::entity::{ShapeBundle, ShapeColors};
-use bevy_prototype_lyon::geometry::GeometryBuilder;
-use bevy_prototype_lyon::prelude::{FillOptions, LineJoin, PathBuilder, StrokeOptions};
-use bevy_prototype_lyon::shapes;
-use bevy_prototype_lyon::utils::DrawMode;
 use rand::random;
-use std::f32::consts::PI;
+use bevy_prototype_lyon::prelude::*;
+use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy_prototype_lyon::shapes::Circle;
 
 pub struct PuzzlePlugin;
 
 impl Plugin for PuzzlePlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.insert_resource(PuzzleIdFactory::default())
             .insert_resource(PickSource {
                 cursor_offset: Vec2::new(17., -19.),
@@ -61,7 +58,7 @@ impl PuzzleIdFactory {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Component)]
 pub struct PuzzleSlot {
     piece: Piece,
     filled: bool,
@@ -96,6 +93,7 @@ pub struct Piece {
     form: EnemyForm,
 }
 
+#[derive(Component)]
 struct ToFill;
 
 fn set_tower_puzzles(
@@ -168,54 +166,7 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
             },
         };
 
-        let bundle: ShapeBundle = match piece.form {
-            EnemyForm::Circle => GeometryBuilder::build_as(
-                &build_circle_path(),
-                ShapeColors {
-                    main: piece.color.to_color(),
-                    outline: Color::DARK_GRAY,
-                },
-                DrawMode::Stroke(
-                    StrokeOptions::default()
-                        .with_line_width(2.)
-                        .with_line_join(LineJoin::Round),
-                ),
-                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
-            ),
-            EnemyForm::Triangle => GeometryBuilder::build_as(
-                &build_triangle_path(),
-                ShapeColors {
-                    main: piece.color.to_color(),
-                    outline: Color::DARK_GRAY,
-                },
-                DrawMode::Stroke(
-                    StrokeOptions::default()
-                        .with_line_width(2.)
-                        .with_line_join(LineJoin::Round),
-                ),
-                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
-            ),
-            EnemyForm::Quadratic => {
-                let rectangle = shapes::Rectangle {
-                    width: 18.0,
-                    height: 18.0,
-                    ..shapes::Rectangle::default()
-                };
-                GeometryBuilder::build_as(
-                    &rectangle,
-                    ShapeColors {
-                        main: piece.color.to_color(),
-                        outline: Color::DARK_GRAY,
-                    },
-                    DrawMode::Stroke(
-                        StrokeOptions::default()
-                            .with_line_width(2.)
-                            .with_line_join(LineJoin::Round),
-                    ),
-                    Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
-                )
-            }
-        };
+        let bundle: ShapeBundle = piece.form.build_bundle(Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)), piece.color.to_color(), None);
         commands.spawn_bundle(bundle).insert(PuzzleSlot {
             piece: piece.clone(),
             filled: false,
@@ -247,43 +198,7 @@ fn update_puzzle_slots(
             continue;
         }
 
-        let bundle: ShapeBundle = match slot.piece.form {
-            EnemyForm::Circle => GeometryBuilder::build_as(
-                &build_circle_path(),
-                ShapeColors {
-                    main: slot.piece.color.to_color(),
-                    outline: Color::DARK_GRAY,
-                },
-                DrawMode::Fill(FillOptions::default()),
-                *transform,
-            ),
-            EnemyForm::Triangle => GeometryBuilder::build_as(
-                &build_triangle_path(),
-                ShapeColors {
-                    main: slot.piece.color.to_color(),
-                    outline: Color::DARK_GRAY,
-                },
-                DrawMode::Fill(FillOptions::default()),
-                *transform,
-            ),
-            EnemyForm::Quadratic => {
-                let rectangle = shapes::Rectangle {
-                    width: 18.0,
-                    height: 18.0,
-                    ..shapes::Rectangle::default()
-                };
-                let mut builder = GeometryBuilder::new();
-                builder.add(&rectangle);
-                builder.build(
-                    ShapeColors {
-                        main: slot.piece.color.to_color(),
-                        outline: Color::DARK_GRAY,
-                    },
-                    DrawMode::Fill(FillOptions::default()),
-                    *transform,
-                )
-            }
-        };
+        let bundle: ShapeBundle = slot.piece.form.build_bundle(*transform, Color::DARK_GRAY, Some(slot.piece.color.to_color()));
         commands.spawn_bundle(bundle).insert(PuzzleSlot {
             filled: true,
             ..slot.clone()
@@ -364,16 +279,12 @@ fn pick_up_piece(
 
 #[allow(dead_code)]
 fn show_cursor(mut commands: Commands, pick_source: Res<PickSource>) {
-    let mut builder = PathBuilder::new();
-    builder.arc(Vec2::new(0.0, 0.0), Vec2::new(3.0, 3.0), 2. * PI, 0.0);
-    let path = builder.build();
     commands.spawn_bundle(GeometryBuilder::build_as(
-        &path,
-        ShapeColors {
-            main: Color::BLACK,
-            outline: Color::BLACK,
+        &Circle {
+            radius: 3.,
+            center: Vec2::splat(0.)
         },
-        DrawMode::Fill(FillOptions::default()),
+        DrawMode::Fill(FillMode::color(Color::BLACK)),
         Transform::from_translation(Vec3::new(
             pick_source.last_cursor_pos.x,
             pick_source.last_cursor_pos.y,

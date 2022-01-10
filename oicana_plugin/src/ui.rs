@@ -4,9 +4,9 @@ use bevy::prelude::*;
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.insert_resource(GameState::default())
-            .init_resource::<ButtonMaterials>()
+            .init_resource::<ButtonColors>()
             .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(init_life.system()))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
@@ -17,25 +17,27 @@ impl Plugin for UiPlugin {
     }
 }
 
-struct ButtonMaterials {
-    normal: Handle<ColorMaterial>,
-    hovered: Handle<ColorMaterial>,
+pub struct ButtonColors {
+    pub normal: UiColor,
+    pub hovered: UiColor,
 }
 
-impl FromWorld for ButtonMaterials {
-    fn from_world(world: &mut World) -> Self {
-        let mut materials = world.get_resource_mut::<Assets<ColorMaterial>>().unwrap();
-        ButtonMaterials {
-            normal: materials.add(Color::rgb(0.15, 0.15, 0.15).into()),
-            hovered: materials.add(Color::rgb(0.25, 0.25, 0.25).into()),
+impl Default for ButtonColors {
+    fn default() -> Self {
+        ButtonColors {
+            normal: Color::rgb(0.15, 0.15, 0.15).into(),
+            hovered: Color::rgb(0.25, 0.25, 0.25).into(),
         }
     }
 }
 
+#[derive(Component)]
 struct RetryButton;
 
+#[derive(Component)]
 struct HealthText;
 
+#[derive(Component)]
 struct ScoreText;
 
 pub struct GameState {
@@ -58,10 +60,8 @@ fn init_life(
     mut commands: Commands,
     asset_server: ResMut<AssetServer>,
     game_state: Res<GameState>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    let material = color_materials.add(Color::NONE.into());
     commands.spawn_bundle(UiCameraBundle::default());
     // root node
     commands
@@ -75,7 +75,7 @@ fn init_life(
                 },
                 ..Default::default()
             },
-            material,
+            color: UiColor(Color::NONE),
             ..Default::default()
         })
         .with_children(|parent| {
@@ -97,7 +97,6 @@ fn init_life(
                 .insert(HealthText);
         });
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    let material = color_materials.add(Color::NONE.into());
     commands
         .spawn_bundle(NodeBundle {
             style: Style {
@@ -109,7 +108,7 @@ fn init_life(
                 },
                 ..Default::default()
             },
-            material,
+            color: UiColor(Color::NONE),
             ..Default::default()
         })
         .with_children(|parent| {
@@ -151,7 +150,7 @@ fn retry_system(
     mut commands: Commands,
     asset_server: ResMut<AssetServer>,
     game_state: Res<GameState>,
-    button_materials: Res<ButtonMaterials>,
+    button_materials: Res<ButtonColors>,
 ) {
     if game_state.is_changed() && game_state.health < 1 {
         commands
@@ -163,7 +162,7 @@ fn retry_system(
                     align_items: AlignItems::Center,
                     ..Default::default()
                 },
-                material: button_materials.normal.clone(),
+                color: button_materials.normal.clone(),
                 ..Default::default()
             })
             .insert(RetryButton)
@@ -188,16 +187,16 @@ fn retry_system(
 
 fn click_retry_button(
     mut commands: Commands,
-    button_materials: Res<ButtonMaterials>,
+    button_colors: Res<ButtonColors>,
     mut state: ResMut<State<AppState>>,
     mut game_state: ResMut<GameState>,
     mut interaction_query: Query<
-        (Entity, &Interaction, &mut Handle<ColorMaterial>, &Children),
+        (Entity, &Interaction, &mut UiColor, &Children),
         With<Button>,
     >,
     text_query: Query<Entity, With<Text>>,
 ) {
-    for (button, interaction, mut material, children) in interaction_query.iter_mut() {
+    for (button, interaction, mut color, children) in interaction_query.iter_mut() {
         let text = text_query.get(children[0]).unwrap();
         match *interaction {
             Interaction::Clicked => {
@@ -207,10 +206,10 @@ fn click_retry_button(
                 state.set(AppState::Restart).unwrap();
             }
             Interaction::Hovered => {
-                *material = button_materials.hovered.clone();
+                *color = button_colors.hovered.clone();
             }
             Interaction::None => {
-                *material = button_materials.normal.clone();
+                *color = button_colors.normal.clone();
             }
         }
     }

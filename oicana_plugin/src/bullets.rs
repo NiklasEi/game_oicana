@@ -2,12 +2,12 @@ use crate::enemies::{Enemy, EnemyLabels, Health, Tameable};
 use crate::AppState;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use std::f32::consts::PI;
+use bevy_prototype_lyon::shapes::Circle;
 
 pub struct BulletPlugin;
 
 impl Plugin for BulletPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_system_set(
             SystemSet::on_update(AppState::InGame)
                 .with_system(update_bullets.system().label(EnemyLabels::Damage)),
@@ -18,6 +18,7 @@ impl Plugin for BulletPlugin {
     }
 }
 
+#[derive(Component)]
 pub struct Bullet {
     pub damage: i32,
     pub speed: f32,
@@ -42,6 +43,7 @@ fn update_bullets(
                 if distance.length() < bullet.speed * delta {
                     health.value -= bullet.damage;
                     commands.entity(entity).despawn();
+                    to_remove.push(bullet_id.clone());
                 } else {
                     let movement = distance.normalize() * bullet.speed * delta;
                     transform.translation += movement;
@@ -62,17 +64,13 @@ fn update_bullets(
 }
 
 pub fn spawn_bullet(commands: &mut Commands, bullet: Bullet, translation: Vec3) -> Entity {
-    let mut builder = PathBuilder::new();
-    builder.arc(Vec2::new(0.001, 0.001), Vec2::new(3.0, 3.0), 2. * PI, 0.0);
-    let path = builder.build();
     commands
         .spawn_bundle(GeometryBuilder::build_as(
-            &path,
-            ShapeColors {
-                main: Color::BLACK,
-                outline: Color::BLACK,
+            &Circle {
+                radius: 3.,
+                center: Vec2::splat(0.)
             },
-            DrawMode::Fill(FillOptions::default()),
+            DrawMode::Fill(FillMode::color(Color::BLACK)),
             Transform::from_translation(translation),
         ))
         .insert(bullet)

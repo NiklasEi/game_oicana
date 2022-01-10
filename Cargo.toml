@@ -3,39 +3,23 @@ name = "oicana"
 description = "A tower-defense game with some puzzle aspects"
 version = "1.4.1-dev"
 authors = ["Niklas Eicker <git@nikl.me>"]
-edition = "2018"
+edition = "2021"
 publish = false
 
 [features]
 default = [
-    "bevy/bevy_gltf",
     "bevy/bevy_winit",
     "bevy/render",
     "bevy/png",
-    "oicana_plugin/default"
-]
-
-native = [
-    "bevy/bevy_wgpu",
-    "oicana_plugin/native"
-]
-
-web = [
-    "bevy_webgl2",
+    "bevy/x11"
 ]
 
 [dependencies]
-bevy = {version="0.5.0", default-features = false}
-bevy_webgl2 = {version="0.5.2", optional = true}
-winit = "0.24.0"
+bevy = {version="0.6.0", default-features = false}
 oicana_plugin = { path = "oicana_plugin", version = "0.1.0" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+winit = { version = "0.25", features=["x11"]}
 
 [build-dependencies]
 embed-resource = "1.4"
-
-[package.metadata.bundle]
-name = "Oicana"
-identifier = "dev.nikl.oicana"
-icon = ["build/*.png"]
-resources = ["assets"]
-short_description = "A tower-defense game with some puzzle aspects"

@@ -7,8 +7,9 @@ use bevy_kira_audio::AudioSource;
 pub struct LoadingPlugin;
 
 impl Plugin for LoadingPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        AssetLoader::new(AppState::Loading, AppState::Menu)
+    fn build(&self, app: &mut App) {
+        AssetLoader::new(AppState::Loading)
+            .continue_to_state(AppState::Menu)
             .with_collection::<FontAssets>()
             .with_collection::<AudioAssets>()
             .with_collection::<TextureAssets>()
@@ -35,23 +36,23 @@ pub struct AudioAssets {
 #[derive(AssetCollection)]
 pub struct TextureAssets {
     #[asset(path = "textures/blank.png")]
-    pub blank: Handle<Texture>,
+    pub blank: Handle<Image>,
     #[asset(path = "textures/towerplot.png")]
-    pub tower_plot: Handle<Texture>,
+    pub tower_plot: Handle<Image>,
     #[asset(path = "textures/tower.png")]
-    pub tower: Handle<Texture>,
+    pub tower: Handle<Image>,
     #[asset(path = "textures/path.png")]
-    pub path: Handle<Texture>,
+    pub path: Handle<Image>,
     #[asset(path = "textures/castle.png")]
-    pub castle: Handle<Texture>,
+    pub castle: Handle<Image>,
     #[asset(path = "textures/cloud.png")]
-    pub cloud: Handle<Texture>,
+    pub cloud: Handle<Image>,
     #[asset(path = "textures/spawn.png")]
-    pub spawn: Handle<Texture>,
+    pub spawn: Handle<Image>,
 }
 
 impl TextureAssets {
-    pub fn get_handle_for_tile(&self, tile: &Tile) -> Handle<Texture> {
+    pub fn get_handle_for_tile(&self, tile: &Tile) -> Handle<Image> {
         match tile {
             &Tile::Empty => self.blank.clone(),
             &Tile::TowerPlot => self.tower_plot.clone(),

@@ -8,7 +8,7 @@ use bevy_kira_audio::{Audio, AudioChannel, AudioPlugin};
 pub struct InternalAudioPlugin;
 
 impl Plugin for InternalAudioPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_plugin(AudioPlugin)
             .add_system_set(SystemSet::on_enter(AppState::Menu).with_system(start_audio.system()))
             .add_system_set(

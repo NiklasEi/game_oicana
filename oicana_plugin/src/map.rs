@@ -6,7 +6,7 @@ use bevy::prelude::*;
 pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         let map = Map::load_map();
         app.insert_resource(map.gather_trees())
             .insert_resource(map)
@@ -52,6 +52,7 @@ pub struct Map {
     pub waypoints: Vec<Coordinate>,
 }
 
+#[derive(Component)]
 pub struct MapTile {
     pub column: usize,
     pub row: usize,
@@ -196,15 +197,13 @@ fn render_map(
     mut commands: Commands,
     map: Res<Map>,
     texture_assets: Res<TextureAssets>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for row in 0..map.height {
         for column in 0..map.width {
             let tile = &map.tiles[row][column];
             commands
                 .spawn_bundle(SpriteBundle {
-                    material: materials
-                        .add(texture_assets.get_handle_for_tile(tile).clone().into()),
+                    texture: texture_assets.get_handle_for_tile(tile).clone(),
                     transform: Transform::from_translation(Vec3::new(
                         column as f32 * map.tile_size,
                         row as f32 * map.tile_size,

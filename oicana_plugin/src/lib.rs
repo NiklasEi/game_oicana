@@ -37,7 +37,7 @@ pub enum OicanaStage {
 }
 
 impl Plugin for GamePlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(Color::BLACK))
             .add_state(AppState::Loading)
             .add_plugin(LoadingPlugin)

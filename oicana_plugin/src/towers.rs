@@ -9,7 +9,7 @@ use bevy::prelude::*;
 pub struct TowersPlugin;
 
 impl Plugin for TowersPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_event::<TowerShot>()
             .add_system_set(
                 SystemSet::on_enter(AppState::InGame).with_system(spawn_map_tower.system()),
@@ -27,6 +27,7 @@ impl Plugin for TowersPlugin {
 
 pub struct TowerShot;
 
+#[derive(Component)]
 struct Tower {
     level: usize,
     range: f32,
@@ -112,9 +113,8 @@ fn build_and_upgrade_towers(
     mut commands: Commands,
     mut event_reader: EventReader<CompletePuzzle>,
     texture_assets: Res<TextureAssets>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut tower_query: Query<(&mut Tower, &mut Timer)>,
-    mut map_tiles_query: Query<(&Transform, &mut Handle<ColorMaterial>), With<MapTile>>,
+    mut map_tiles_query: Query<(&Transform, &mut Handle<Image>), With<MapTile>>,
 ) {
     for completed_puzzle in event_reader.iter() {
         let coordinate: Coordinate = completed_puzzle.coordinate.clone();
@@ -129,11 +129,11 @@ fn build_and_upgrade_towers(
 
             *timer = Timer::from_seconds(if tower.level == 2 { 0.2 } else { 0.1 }, true);
         } else {
-            for (transform, mut material) in map_tiles_query.iter_mut() {
+            for (transform, mut image) in map_tiles_query.iter_mut() {
                 if transform.translation.x == coordinate.x
                     && transform.translation.y == coordinate.y
                 {
-                    *material = materials.add(texture_assets.tower.clone().into())
+                    *image = texture_assets.tower.clone().into()
                 }
             }
             commands

@@ -5,15 +5,14 @@ use crate::{AppState, OicanaStage};
 use bevy::prelude::*;
 use bevy::utils::Instant;
 use bevy_prototype_lyon::prelude::*;
-use lyon_tessellation::path::Path;
 use rand::distributions::Standard;
 use rand::prelude::*;
-use std::f32::consts::PI;
+use bevy_prototype_lyon::entity::ShapeBundle;
 
 pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.insert_resource(WaveState {
             last_spawn: Instant::now(),
         })
@@ -62,9 +61,10 @@ struct WaveState {
     pub last_spawn: Instant,
 }
 
+#[derive(Component)]
 pub struct Tameable;
 
-#[derive(Clone)]
+#[derive(Clone, Component)]
 pub struct Enemy {
     current_waypoint_index: usize,
     pub form: EnemyForm,
@@ -75,7 +75,7 @@ pub struct Enemy {
     pub max_health: i32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Component)]
 pub struct Health {
     pub value: i32,
 }
@@ -184,19 +184,11 @@ fn create_enemy(
         max_health: health,
         bullets: vec![],
         colored_health: health,
-        color,
+        color: color.clone(),
         travelled: 0.,
     };
     commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &form.get_geometry(),
-            ShapeColors {
-                main: enemy.get_color(health),
-                outline: Color::DARK_GRAY,
-            },
-            DrawMode::Fill(FillOptions::default()),
-            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)),
-        ))
+        .spawn_bundle(form.build_bundle(Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)), enemy.get_color(health), Some(enemy.get_color(health))))
         .insert(enemy)
         .insert(Health { value: health });
 }
@@ -209,39 +201,26 @@ pub enum EnemyForm {
 }
 
 impl EnemyForm {
-    pub fn get_geometry(&self) -> Path {
-        match self {
-            EnemyForm::Circle => build_circle_path(),
-            EnemyForm::Triangle => build_triangle_path(),
-            EnemyForm::Quadratic => build_rectangle_path(),
-        }
+    pub fn build_bundle(&self, transform: Transform, outline_color: Color, fill_color: Option<Color>) -> ShapeBundle {
+        let shape = shapes::RegularPolygon {
+            sides: match self {
+                EnemyForm::Circle => 5,
+                EnemyForm::Triangle => 3,
+                EnemyForm::Quadratic => 4,
+            },
+            feature: shapes::RegularPolygonFeature::Radius(12.0),
+            ..shapes::RegularPolygon::default()
+        };
+
+        GeometryBuilder::build_as(
+                &shape,
+                DrawMode::Outlined {
+                    fill_mode: FillMode::color(fill_color.unwrap_or(Color::NONE)),
+                    outline_mode: StrokeMode::new(outline_color, 2.0),
+                },
+                transform,
+            )
     }
-}
-
-pub fn build_circle_path() -> Path {
-    let mut builder = PathBuilder::new();
-    builder.arc(Vec2::new(0.001, 0.001), Vec2::new(10.0, 10.0), 2. * PI, 0.0);
-    builder.build()
-}
-
-pub fn build_triangle_path() -> Path {
-    let mut builder = PathBuilder::new();
-    builder.move_to(Vec2::new(-5., 9.));
-    builder.line_to(Vec2::new(-5., -9.));
-    builder.line_to(Vec2::new(10., 0.));
-    builder.line_to(Vec2::new(-5., 9.));
-    builder.build()
-}
-
-pub fn build_rectangle_path() -> Path {
-    let mut builder = Path::builder();
-    shapes::Rectangle {
-        width: 18.0,
-        height: 18.0,
-        ..shapes::Rectangle::default()
-    }
-    .add_geometry(&mut builder);
-    builder.build()
 }
 
 fn remove_enemies(
@@ -306,29 +285,20 @@ fn update_enemies(
 }
 
 fn update_enemy_colors(
-    mut commands: Commands,
-    damaged_enemies: Query<(Entity, &Health, &Enemy, &Transform), Changed<Health>>,
+    mut damaged_enemies: Query<(&mut DrawMode, &Health, &Enemy), Changed<Health>>,
 ) {
-    for (entity, health, enemy, transform) in damaged_enemies.iter() {
+    for (mut draw_mode, health, enemy) in damaged_enemies.iter_mut() {
         if health.value == enemy.colored_health {
             continue;
         }
-        commands.entity(entity).despawn();
-        commands
-            .spawn_bundle(GeometryBuilder::build_as(
-                &enemy.form.get_geometry(),
-                ShapeColors {
-                    main: enemy.get_color(health.value),
-                    outline: Color::DARK_GRAY,
-                },
-                DrawMode::Fill(FillOptions::default()),
-                transform.clone(),
-            ))
-            .insert(Enemy {
-                colored_health: health.value,
-                ..enemy.clone()
-            })
-            .insert(health.clone());
+        if let DrawMode::Outlined {
+            ref mut fill_mode,
+            ref mut outline_mode,
+        } = *draw_mode
+        {
+            fill_mode.color = enemy.get_color(health.value);
+            outline_mode.color = enemy.get_color(health.value);
+        }
     }
 }
 
