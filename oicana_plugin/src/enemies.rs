@@ -188,7 +188,7 @@ fn create_enemy(
         travelled: 0.,
     };
     commands
-        .spawn_bundle(form.build_bundle(Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 0.)), enemy.get_color(health), Some(enemy.get_color(health))))
+        .spawn_bundle(form.build_bundle(Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 1.)), enemy.get_color(health), Some(enemy.get_color(health))))
         .insert(enemy)
         .insert(Health { value: health });
 }

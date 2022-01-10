@@ -102,7 +102,11 @@ fn shoot(
                 };
                 enemy
                     .bullets
-                    .push(spawn_bullet(&mut commands, bullet, tower_pos.translation));
+                    .push({
+                        let mut translation = tower_pos.translation;
+                        translation.z += 2.;
+                        spawn_bullet(&mut commands, bullet, translation)
+                    });
                 tower_shot.send(TowerShot);
             }
         }

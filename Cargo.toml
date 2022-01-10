@@ -6,6 +6,10 @@ authors = ["Niklas Eicker <git@nikl.me>"]
 edition = "2021"
 publish = false
 
+[profile.release]
+lto = true
+codegen-units = 1
+
 [features]
 default = [
     "bevy/bevy_winit",
