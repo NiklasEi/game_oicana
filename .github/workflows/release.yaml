@@ -148,8 +148,8 @@ jobs:
       - name: optimize
         uses: NiklasEi/wasm-opt@v0
         with:
-          file: build/web/target/${{ env.CARGO_MAKE_CRATE_NAME }}.wasm
-          output: build/web/target/${{ env.CARGO_MAKE_CRATE_NAME }}.wasm
+          file: build/web/target/oicana.wasm
+          output: build/web/target/oicana.wasm
       - name: Zip release
         uses: vimtor/action-zip@v1
         with:
