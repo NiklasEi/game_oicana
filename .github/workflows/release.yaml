@@ -145,6 +145,11 @@ jobs:
       - name: Build Release
         run: |
           cargo make release
+      - name: optimize
+        uses: NiklasEi/wasm-opt@v1
+        with:
+          file: build/web/target/${{ env.CARGO_MAKE_CRATE_NAME }}.wasm
+          output: build/web/target/${{ env.CARGO_MAKE_CRATE_NAME }}.wasm
       - name: Zip release
         uses: vimtor/action-zip@v1
         with:
