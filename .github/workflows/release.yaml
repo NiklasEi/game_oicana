@@ -146,7 +146,7 @@ jobs:
         run: |
           cargo make release
       - name: optimize
-        uses: NiklasEi/wasm-opt@v0
+        uses: NiklasEi/wasm-opt@v0.1.1
         with:
           file: build/web/target/oicana.wasm
           output: build/web/target/oicana.wasm
