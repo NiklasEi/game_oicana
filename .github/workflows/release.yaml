@@ -145,11 +145,6 @@ jobs:
       - name: Build Release
         run: |
           cargo make release
-      - name: optimize
-        uses: NiklasEi/wasm-opt@v0
-        with:
-          file: build/web/target/oicana.wasm
-          output: build/web/target/oicana.wasm
       - name: Zip release
         uses: vimtor/action-zip@v1
         with:
