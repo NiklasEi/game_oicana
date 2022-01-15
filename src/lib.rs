@@ -1,12 +1,5 @@
-mod audio;
-mod bullets;
-mod enemies;
-mod loading;
-mod map;
-mod menu;
-mod puzzle;
-mod towers;
-mod ui;
+use bevy::prelude::*;
+use bevy_prototype_lyon::plugin::ShapePlugin;
 
 use crate::audio::InternalAudioPlugin;
 use crate::bullets::BulletPlugin;
@@ -18,10 +11,23 @@ use crate::puzzle::PuzzlePlugin;
 use crate::towers::TowersPlugin;
 use crate::ui::UiPlugin;
 
-use bevy::prelude::*;
-use bevy_prototype_lyon::plugin::ShapePlugin;
+mod audio;
+mod bullets;
+mod enemies;
+mod loading;
+mod map;
+mod menu;
+mod puzzle;
+mod towers;
+mod ui;
 
 pub struct GamePlugin;
+
+pub const MAP_Z: f32 = 0.;
+pub const TOWER_Z: f32 = 1.;
+pub const PUZZLE_Z: f32 = 2.;
+pub const ENEMY_Z: f32 = 3.;
+pub const BULLET_Z: f32 = 4.;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum AppState {

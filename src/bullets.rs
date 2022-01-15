@@ -33,14 +33,15 @@ fn update_bullets(
 ) {
     let delta = time.delta().as_secs_f32();
     for (target_transform, mut health, mut enemy) in enemy_query.iter_mut() {
-        let mut to_remove = vec![];
+        let mut to_remove: Vec<Entity> = vec![];
         for bullet_id in enemy.bullets.iter() {
             let bullet = bullet_query.get_mut(*bullet_id);
-            if let Ok((entity, bullet, mut transform)) = bullet {
-                let distance = target_transform.translation - transform.translation;
+            if let Ok((bullet_entity, bullet, mut transform)) = bullet {
+                let mut distance = target_transform.translation - transform.translation;
+                distance.z = 0.;
                 if distance.length() < bullet.speed * delta {
                     health.value -= bullet.damage;
-                    commands.entity(entity).despawn();
+                    commands.entity(bullet_entity).despawn();
                     to_remove.push(bullet_id.clone());
                 } else {
                     let movement = distance.normalize() * bullet.speed * delta;
@@ -50,14 +51,11 @@ fn update_bullets(
                 to_remove.push(bullet_id.clone());
             }
         }
-        for bullet_id in to_remove.drain(..) {
-            let position = enemy
-                .bullets
-                .iter()
-                .position(|&id| id == bullet_id)
-                .unwrap();
-            enemy.bullets.remove(position);
-        }
+        enemy.bullets = enemy
+            .bullets
+            .drain(..)
+            .filter(|entity| !to_remove.contains(entity))
+            .collect();
     }
 }
 

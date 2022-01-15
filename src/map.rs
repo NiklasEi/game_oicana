@@ -1,6 +1,6 @@
 use crate::enemies::Trees;
 use crate::loading::TextureAssets;
-use crate::AppState;
+use crate::{AppState, MAP_Z};
 use bevy::prelude::*;
 
 pub struct MapPlugin;
@@ -209,7 +209,7 @@ fn render_map(mut commands: Commands, map: Res<Map>, texture_assets: Res<Texture
                     transform: Transform::from_translation(Vec3::new(
                         column as f32 * map.tile_size,
                         row as f32 * map.tile_size,
-                        0.,
+                        MAP_Z,
                     )),
                     ..Default::default()
                 })

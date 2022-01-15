@@ -3,8 +3,9 @@ use crate::enemies::{Enemy, Tameable};
 use crate::loading::TextureAssets;
 use crate::map::{Coordinate, Map, MapTile, Tile};
 use crate::puzzle::CompletePuzzle;
-use crate::AppState;
+use crate::{AppState, TOWER_Z};
 use bevy::prelude::*;
+use std::ops::{Deref, DerefMut};
 
 pub struct TowersPlugin;
 
@@ -54,13 +55,13 @@ fn spawn_map_tower(mut commands: Commands, map: Res<Map>) {
 fn shoot(
     mut commands: Commands,
     time: Res<Time>,
-    mut tower_query: Query<(&Transform, &Tower, &mut Timer)>,
+    mut tower_query: Query<(&Transform, &Tower, &mut TowerCooldown)>,
     mut tower_shot: EventWriter<TowerShot>,
     mut enemies_query: Query<(Entity, &Transform, &mut Enemy), Without<Tameable>>,
 ) {
-    for (tower_pos, tower, mut timer) in tower_query.iter_mut() {
-        timer.tick(time.delta());
-        if timer.just_finished() {
+    for (tower_pos, tower, mut tower_cooldown) in tower_query.iter_mut() {
+        tower_cooldown.tick(time.delta());
+        if tower_cooldown.just_finished() {
             let furthest_target: Option<(Entity, f32)> = enemies_query
                 .iter_mut()
                 .filter(|(_, pos, _)| {
@@ -100,21 +101,24 @@ fn build_and_upgrade_towers(
     mut commands: Commands,
     mut event_reader: EventReader<CompletePuzzle>,
     texture_assets: Res<TextureAssets>,
-    mut tower_query: Query<(&mut Tower, &mut Timer)>,
+    mut tower_query: Query<(&mut Tower, &mut TowerCooldown)>,
     mut map_tiles_query: Query<(&Transform, &mut Handle<Image>), With<MapTile>>,
 ) {
     for completed_puzzle in event_reader.iter() {
         let coordinate: Coordinate = completed_puzzle.coordinate.clone();
-        if let Some((mut tower, mut timer)) = tower_query
+        if let Some((mut tower, mut tower_cooldown)) = tower_query
             .iter_mut()
-            .find(|(tower, _timer)| tower.coordinate == coordinate)
+            .find(|(tower, _)| tower.coordinate == coordinate)
         {
             tower.level += 1;
             tower.speed += 20.;
             tower.damage += 5;
             tower.range += 5.;
 
-            *timer = Timer::from_seconds(if tower.level == 2 { 0.2 } else { 0.1 }, true);
+            *tower_cooldown = TowerCooldown(Timer::from_seconds(
+                if tower.level == 2 { 0.2 } else { 0.1 },
+                true,
+            ));
         } else {
             for (transform, mut image) in map_tiles_query.iter_mut() {
                 if transform.translation.x == coordinate.x
@@ -130,6 +134,20 @@ fn build_and_upgrade_towers(
 
 #[derive(Component)]
 pub struct TowerCooldown(Timer);
+
+impl Deref for TowerCooldown {
+    type Target = Timer;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for TowerCooldown {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl Default for TowerCooldown {
     fn default() -> Self {
@@ -154,7 +172,7 @@ impl TowerBundle {
                 speed: 200.,
                 coordinate: coordinate.clone(),
             },
-            transform: Transform::from_translation(coordinate.to_translation(2.)),
+            transform: Transform::from_translation(coordinate.to_translation(TOWER_Z)),
             cooldown: TowerCooldown::default(),
         }
     }

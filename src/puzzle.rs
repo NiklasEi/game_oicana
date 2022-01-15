@@ -1,6 +1,6 @@
 use crate::enemies::{Enemy, EnemyColor, EnemyForm, Tameable};
 use crate::map::{Coordinate, Map, Tile};
-use crate::AppState;
+use crate::{AppState, ENEMY_Z, PUZZLE_Z};
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
@@ -25,13 +25,23 @@ impl Plugin for PuzzlePlugin {
             .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(set_tower_puzzles))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
-                    .with_system(pick_up_piece)
+                    .with_system(puzzle_input.label(PuzzleLabels::PlayerInput))
                     .with_system(update_picked_up_piece)
-                    .with_system(update_puzzle_slots)
-                    .with_system(update_puzzle),
+                    .with_system(
+                        place_puzzle_piece
+                            .label(PuzzleLabels::PlacePiece)
+                            .after(PuzzleLabels::PlayerInput),
+                    )
+                    .with_system(update_puzzle.after(PuzzleLabels::PlacePiece)),
             )
             .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_puzzles));
     }
+}
+
+#[derive(SystemLabel, Clone, Hash, Debug, Eq, PartialEq)]
+pub enum PuzzleLabels {
+    PlayerInput,
+    PlacePiece,
 }
 
 #[derive(Debug)]
@@ -161,7 +171,7 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
         };
 
         let bundle: ShapeBundle = piece.form.build_bundle(
-            Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 1.)),
+            Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, PUZZLE_Z)),
             piece.color.to_color(),
             None,
         );
@@ -174,14 +184,13 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
     puzzle
 }
 
-fn update_puzzle_slots(
+fn place_puzzle_piece(
     mut commands: Commands,
     mut puzzles: ResMut<Puzzles>,
-    query: Query<(Entity, &Transform, &PuzzleSlot), With<ToFill>>,
+    mut query: Query<(Entity, &mut DrawMode, &mut PuzzleSlot), With<ToFill>>,
     mut complete_puzzle: EventWriter<CompletePuzzle>,
 ) {
-    for (entity, transform, slot) in query.iter() {
-        commands.entity(entity).despawn();
+    for (entity, mut draw_mode, mut slot) in query.iter_mut() {
         let puzzle = puzzles
             .towers
             .iter_mut()
@@ -196,19 +205,19 @@ fn update_puzzle_slots(
             continue;
         }
 
-        let bundle: ShapeBundle = slot.piece.form.build_bundle(
-            *transform,
-            Color::DARK_GRAY,
-            Some(slot.piece.color.to_color()),
-        );
-        commands.spawn_bundle(bundle).insert(PuzzleSlot {
-            filled: true,
-            ..slot.clone()
-        });
+        commands.entity(entity).remove::<ToFill>();
+        if let DrawMode::Outlined {
+            ref mut fill_mode,
+            outline_mode: _,
+        } = *draw_mode
+        {
+            fill_mode.color = slot.piece.color.to_color();
+        }
+        slot.filled = true;
     }
 }
 
-fn pick_up_piece(
+fn puzzle_input(
     mut commands: Commands,
     mut cursor_events: EventReader<CursorMoved>,
     mouse_button_inputs: Res<Input<MouseButton>>,
@@ -245,7 +254,7 @@ fn pick_up_piece(
         } else {
             // we have a piece, place it in a puzzle or let it go
             let mut found_slot: bool = false;
-            for (entity, transform, mut slot) in puzzle_query.iter_mut() {
+            for (puzzle_entity, transform, mut slot) in puzzle_query.iter_mut() {
                 if slot.filled
                     || Vec2::new(
                         transform.translation.x - cursor_position.x,
@@ -258,12 +267,8 @@ fn pick_up_piece(
                 }
                 found_slot = true;
                 if &slot.piece == currently_picked.piece.as_ref().unwrap() {
-                    let (_, mut tamable_transform, _) = tamable_query
-                        .get_mut(currently_picked.entity.unwrap())
-                        .unwrap();
-                    tamable_transform.translation = transform.translation;
-                    commands.entity(entity).insert(ToFill);
                     commands.entity(currently_picked.entity.unwrap()).despawn();
+                    commands.entity(puzzle_entity).insert(ToFill);
                     slot.filled = true;
                     currently_picked.entity = None;
                     currently_picked.piece = None;
@@ -307,7 +312,7 @@ fn update_picked_up_piece(
         transform.translation = Vec3::new(
             pick_source.last_cursor_pos.x,
             pick_source.last_cursor_pos.y,
-            0.,
+            ENEMY_Z,
         );
     }
 }

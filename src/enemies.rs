@@ -1,13 +1,14 @@
-use crate::map::{Coordinate, Map};
-use crate::puzzle::CurrentPiece;
-use crate::ui::GameState;
-use crate::{AppState, OicanaStage};
 use bevy::prelude::*;
 use bevy::utils::Instant;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use rand::distributions::Standard;
 use rand::prelude::*;
+
+use crate::map::{Coordinate, Map};
+use crate::puzzle::CurrentPiece;
+use crate::ui::GameState;
+use crate::{AppState, OicanaStage, ENEMY_Z};
 
 pub struct EnemiesPlugin;
 
@@ -36,7 +37,11 @@ impl Plugin for EnemiesPlugin {
                 )
                 .with_system(spawn_enemies.before(EnemyLabels::UpdateColor))
                 .with_system(update_tamable_enemies.before(EnemyLabels::UpdateColor))
-                .with_system(update_enemies.before(EnemyLabels::UpdateColor)),
+                .with_system(
+                    move_enemies
+                        .label(EnemyLabels::Move)
+                        .before(EnemyLabels::Damage),
+                ),
         )
         .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_enemies));
     }
@@ -46,6 +51,7 @@ impl Plugin for EnemiesPlugin {
 pub enum EnemyLabels {
     UpdateColor,
     Damage,
+    Move,
 }
 
 pub struct EnemyBreach;
@@ -182,7 +188,7 @@ fn create_enemy(
     };
     commands
         .spawn_bundle(form.build_bundle(
-            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, 1.)),
+            Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, ENEMY_Z)),
             enemy.get_color(health),
             Some(enemy.get_color(health)),
         ))
@@ -257,7 +263,7 @@ fn remove_enemies(
     }
 }
 
-fn update_enemies(
+fn move_enemies(
     time: Res<Time>,
     map: Res<Map>,
     mut enemy_query: Query<(&mut Enemy, &mut Transform), Without<Tameable>>,
@@ -269,14 +275,15 @@ fn update_enemies(
             continue;
         }
         let destination = map.waypoints.get(enemy.current_waypoint_index).unwrap();
-        let distance = Vec3::new(destination.x, destination.y, 0.) - transform.translation;
+        let mut distance = Vec3::new(destination.x, destination.y, ENEMY_Z) - transform.translation;
+        distance.z = 0.;
         if distance == Vec3::ZERO {
             enemy.current_waypoint_index += 1;
             continue;
         }
         let movement = distance.normalize() * delta * speed;
         if movement.length() > distance.length() {
-            transform.translation = Vec3::new(destination.x, destination.y, 0.);
+            transform.translation = Vec3::new(destination.x, destination.y, ENEMY_Z);
             enemy.travelled += distance.length();
             enemy.current_waypoint_index += 1;
         } else {
@@ -323,8 +330,9 @@ fn update_tamable_enemies(
             (10_000., Coordinate { x: 0., y: 0. }),
             |acc, coordinate| {
                 let (old_distance, _) = acc;
-                let distance =
-                    (Vec3::new(coordinate.x, coordinate.y, 0.) - transform.translation).length();
+                let distance = (Vec3::new(coordinate.x, coordinate.y, ENEMY_Z)
+                    - transform.translation)
+                    .length();
                 if distance < old_distance {
                     (distance, coordinate.clone())
                 } else {
@@ -332,8 +340,8 @@ fn update_tamable_enemies(
                 }
             },
         );
-        let direction =
-            Vec3::new(closest_tree_position.x, closest_tree_position.y, 0.) - transform.translation;
+        let direction = Vec3::new(closest_tree_position.x, closest_tree_position.y, ENEMY_Z)
+            - transform.translation;
         if direction.is_finite() {
             let movement = direction.normalize() * delta * speed;
             if movement.length() > direction.length() {
