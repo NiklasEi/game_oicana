@@ -145,8 +145,8 @@ jobs:
       - name: Build Release
         run: |
           cargo make release
-      - name: optimize
-        uses: NiklasEi/wasm-opt@v0.1.1
+      - name: optimize Wasm
+        uses: NiklasEi/wasm-opt@v1
         with:
           file: build/web/target/wasm_bg.wasm
           output: build/web/target/wasm_bg.wasm
