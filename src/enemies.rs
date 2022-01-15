@@ -183,7 +183,7 @@ fn create_enemy(
         max_health: health,
         bullets: vec![],
         colored_health: health,
-        color: color.clone(),
+        color,
         travelled: 0.,
     };
     commands

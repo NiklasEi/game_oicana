@@ -30,7 +30,7 @@ fn setup_menu(
                 align_items: AlignItems::Center,
                 ..Default::default()
             },
-            color: button_colors.normal.clone(),
+            color: button_colors.normal,
             ..Default::default()
         })
         .insert(PlayButton)
@@ -68,10 +68,10 @@ fn click_play_button(
                 state.set(AppState::InGame).unwrap();
             }
             Interaction::Hovered => {
-                *color = button_colors.hovered.clone();
+                *color = button_colors.hovered;
             }
             Interaction::None => {
-                *color = button_colors.normal.clone();
+                *color = button_colors.normal;
             }
         }
     }

@@ -71,12 +71,12 @@ fn shoot(
                 .fold(None, |acc, (entity, _, enemy)| {
                     if let Some((_, old_travelled)) = acc {
                         if enemy.travelled > old_travelled {
-                            Some((entity.clone(), enemy.travelled))
+                            Some((entity, enemy.travelled))
                         } else {
                             acc
                         }
                     } else {
-                        Some((entity.clone(), enemy.travelled))
+                        Some((entity, enemy.travelled))
                     }
                 });
 
@@ -124,7 +124,7 @@ fn build_and_upgrade_towers(
                 if transform.translation.x == coordinate.x
                     && transform.translation.y == coordinate.y
                 {
-                    *image = texture_assets.tower.clone().into()
+                    *image = texture_assets.tower.clone()
                 }
             }
             commands.spawn_bundle(TowerBundle::new(coordinate));

@@ -162,7 +162,7 @@ fn retry_system(
                     align_items: AlignItems::Center,
                     ..Default::default()
                 },
-                color: button_materials.normal.clone(),
+                color: button_materials.normal,
                 ..Default::default()
             })
             .insert(RetryButton)
@@ -203,10 +203,10 @@ fn click_retry_button(
                 state.set(AppState::Restart).unwrap();
             }
             Interaction::Hovered => {
-                *color = button_colors.hovered.clone();
+                *color = button_colors.hovered;
             }
             Interaction::None => {
-                *color = button_colors.normal.clone();
+                *color = button_colors.normal;
             }
         }
     }

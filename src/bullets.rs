@@ -24,11 +24,8 @@ pub struct Bullet {
 
 fn update_bullets(
     mut commands: Commands,
-    mut bullet_query: Query<(Entity, &Bullet, &mut Transform)>,
-    mut enemy_query: Query<
-        (&Transform, &mut Health, &mut Enemy),
-        (Without<Tameable>, Without<Bullet>),
-    >,
+    mut bullet_query: Query<(Entity, &Bullet, &mut Transform), Without<Enemy>>,
+    mut enemy_query: Query<(&Transform, &mut Health, &mut Enemy), Without<Tameable>>,
     time: Res<Time>,
 ) {
     let delta = time.delta().as_secs_f32();
@@ -42,13 +39,13 @@ fn update_bullets(
                 if distance.length() < bullet.speed * delta {
                     health.value -= bullet.damage;
                     commands.entity(bullet_entity).despawn();
-                    to_remove.push(bullet_id.clone());
+                    to_remove.push(*bullet_id);
                 } else {
                     let movement = distance.normalize() * bullet.speed * delta;
                     transform.translation += movement;
                 }
             } else {
-                to_remove.push(bullet_id.clone());
+                to_remove.push(*bullet_id);
             }
         }
         enemy.bullets = enemy

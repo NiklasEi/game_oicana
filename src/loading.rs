@@ -53,14 +53,14 @@ pub struct TextureAssets {
 
 impl TextureAssets {
     pub fn get_handle_for_tile(&self, tile: &Tile) -> Handle<Image> {
-        match tile {
-            &Tile::Empty => self.blank.clone(),
-            &Tile::TowerPlot => self.tower_plot.clone(),
-            &Tile::Tower => self.tower.clone(),
-            &Tile::Path => self.path.clone(),
-            &Tile::Castle => self.castle.clone(),
-            &Tile::Cloud => self.cloud.clone(),
-            &Tile::Spawn => self.spawn.clone(),
+        match *tile {
+            Tile::Empty => self.blank.clone(),
+            Tile::TowerPlot => self.tower_plot.clone(),
+            Tile::Tower => self.tower.clone(),
+            Tile::Path => self.path.clone(),
+            Tile::Castle => self.castle.clone(),
+            Tile::Cloud => self.cloud.clone(),
+            Tile::Spawn => self.spawn.clone(),
         }
     }
 }
