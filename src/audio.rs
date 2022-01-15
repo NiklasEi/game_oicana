@@ -10,13 +10,13 @@ pub struct InternalAudioPlugin;
 impl Plugin for InternalAudioPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(AudioPlugin)
-            .add_system_set(SystemSet::on_enter(AppState::Menu).with_system(start_audio.system()))
+            .add_system_set(SystemSet::on_enter(AppState::Menu).with_system(start_audio))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
-                    .with_system(tower_shots.system())
-                    .with_system(enemy_breach.system()),
+                    .with_system(tower_shots)
+                    .with_system(enemy_breach),
             )
-            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(stop_audio.system()));
+            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(stop_audio));
     }
 }
 

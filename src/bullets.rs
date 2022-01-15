@@ -10,11 +10,9 @@ impl Plugin for BulletPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
             SystemSet::on_update(AppState::InGame)
-                .with_system(update_bullets.system().label(EnemyLabels::Damage)),
+                .with_system(update_bullets.label(EnemyLabels::Damage)),
         )
-        .add_system_set(
-            SystemSet::on_exit(AppState::InGame).with_system(break_down_bullets.system()),
-        );
+        .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_bullets));
     }
 }
 

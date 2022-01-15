@@ -12,8 +12,8 @@ impl Plugin for MapPlugin {
             .insert_resource(map)
             .add_system_set(
                 SystemSet::on_enter(AppState::Menu)
-                    .with_system(render_map.system())
-                    .with_system(setup_camera.system()),
+                    .with_system(render_map)
+                    .with_system(setup_camera),
             );
     }
 }
@@ -39,6 +39,12 @@ struct Point {
 pub struct Coordinate {
     pub x: f32,
     pub y: f32,
+}
+
+impl Coordinate {
+    pub fn to_translation(&self, z: f32) -> Vec3 {
+        Vec3::new(self.x, self.y, z)
+    }
 }
 
 #[derive(Debug)]

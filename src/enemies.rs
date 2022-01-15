@@ -25,27 +25,20 @@ impl Plugin for EnemiesPlugin {
         .add_state_to_stage(OicanaStage::EnemyRemoval, AppState::Loading)
         .add_system_set_to_stage(
             OicanaStage::EnemyRemoval,
-            SystemSet::on_update(AppState::InGame).with_system(remove_enemies.system()),
+            SystemSet::on_update(AppState::InGame).with_system(remove_enemies),
         )
         .add_system_set(
             SystemSet::on_update(AppState::InGame)
                 .with_system(
                     update_enemy_colors
-                        .system()
                         .label(EnemyLabels::UpdateColor)
                         .after(EnemyLabels::Damage),
                 )
-                .with_system(spawn_enemies.system().before(EnemyLabels::UpdateColor))
-                .with_system(
-                    update_tamable_enemies
-                        .system()
-                        .before(EnemyLabels::UpdateColor),
-                )
-                .with_system(update_enemies.system().before(EnemyLabels::UpdateColor)),
+                .with_system(spawn_enemies.before(EnemyLabels::UpdateColor))
+                .with_system(update_tamable_enemies.before(EnemyLabels::UpdateColor))
+                .with_system(update_enemies.before(EnemyLabels::UpdateColor)),
         )
-        .add_system_set(
-            SystemSet::on_exit(AppState::InGame).with_system(break_down_enemies.system()),
-        );
+        .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_enemies));
     }
 }
 

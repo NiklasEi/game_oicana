@@ -7,12 +7,12 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameState::default())
             .init_resource::<ButtonColors>()
-            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(init_life.system()))
+            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(init_life))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
-                    .with_system(update_game_state.system())
-                    .with_system(retry_system.system())
-                    .with_system(click_retry_button.system()),
+                    .with_system(update_game_state)
+                    .with_system(retry_system)
+                    .with_system(click_retry_button),
             );
     }
 }

@@ -50,9 +50,7 @@ impl Plugin for GamePlugin {
             .add_plugin(UiPlugin)
             .add_plugin(PuzzlePlugin)
             .add_plugin(InternalAudioPlugin);
-        app.add_system_set(
-            SystemSet::on_enter(AppState::Restart).with_system(switch_to_game.system()),
-        );
+        app.add_system_set(SystemSet::on_enter(AppState::Restart).with_system(switch_to_game));
     }
 }
 

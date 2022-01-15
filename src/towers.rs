@@ -11,17 +11,13 @@ pub struct TowersPlugin;
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<TowerShot>()
-            .add_system_set(
-                SystemSet::on_enter(AppState::InGame).with_system(spawn_map_tower.system()),
-            )
+            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(spawn_map_tower))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
-                    .with_system(shoot.system())
-                    .with_system(build_and_upgrade_towers.system()),
+                    .with_system(shoot)
+                    .with_system(build_and_upgrade_towers),
             )
-            .add_system_set(
-                SystemSet::on_exit(AppState::InGame).with_system(break_down_towers.system()),
-            );
+            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_towers));
     }
 }
 
@@ -51,18 +47,7 @@ fn spawn_map_tower(mut commands: Commands, map: Res<Map>) {
     }
 
     for coordinate in tower_positions {
-        commands
-            .spawn_bundle((
-                Tower {
-                    range: 100.,
-                    damage: 15,
-                    level: 1,
-                    speed: 200.,
-                    coordinate: coordinate.clone(),
-                },
-                Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
-            ))
-            .insert(Timer::from_seconds(0.3, true));
+        commands.spawn_bundle(TowerBundle::new(coordinate));
     }
 }
 
@@ -138,18 +123,39 @@ fn build_and_upgrade_towers(
                     *image = texture_assets.tower.clone().into()
                 }
             }
-            commands
-                .spawn_bundle((
-                    Tower {
-                        range: 100.,
-                        damage: 15,
-                        level: 1,
-                        speed: 200.,
-                        coordinate: coordinate.clone(),
-                    },
-                    Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, 0.)),
-                ))
-                .insert(Timer::from_seconds(0.3, true));
+            commands.spawn_bundle(TowerBundle::new(coordinate));
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct TowerCooldown(Timer);
+
+impl Default for TowerCooldown {
+    fn default() -> Self {
+        TowerCooldown(Timer::from_seconds(0.3, true))
+    }
+}
+
+#[derive(Bundle)]
+pub struct TowerBundle {
+    tower: Tower,
+    transform: Transform,
+    cooldown: TowerCooldown,
+}
+
+impl TowerBundle {
+    fn new(coordinate: Coordinate) -> Self {
+        TowerBundle {
+            tower: Tower {
+                range: 100.,
+                damage: 15,
+                level: 1,
+                speed: 200.,
+                coordinate: coordinate.clone(),
+            },
+            transform: Transform::from_translation(coordinate.to_translation(2.)),
+            cooldown: TowerCooldown::default(),
         }
     }
 }

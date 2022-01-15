@@ -22,19 +22,15 @@ impl Plugin for PuzzlePlugin {
             })
             .add_event::<CompletePuzzle>()
             .insert_resource(Puzzles { towers: vec![] })
-            .add_system_set(
-                SystemSet::on_enter(AppState::InGame).with_system(set_tower_puzzles.system()),
-            )
+            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(set_tower_puzzles))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
-                    .with_system(pick_up_piece.system())
-                    .with_system(update_picked_up_piece.system())
-                    .with_system(update_puzzle_slots.system())
-                    .with_system(update_puzzle.system()),
+                    .with_system(pick_up_piece)
+                    .with_system(update_picked_up_piece)
+                    .with_system(update_puzzle_slots)
+                    .with_system(update_puzzle),
             )
-            .add_system_set(
-                SystemSet::on_exit(AppState::InGame).with_system(break_down_puzzles.system()),
-            );
+            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_puzzles));
     }
 }
 

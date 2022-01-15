@@ -7,10 +7,8 @@ pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Menu).with_system(setup_menu.system()))
-            .add_system_set(
-                SystemSet::on_update(AppState::Menu).with_system(click_play_button.system()),
-            );
+        app.add_system_set(SystemSet::on_enter(AppState::Menu).with_system(setup_menu))
+            .add_system_set(SystemSet::on_update(AppState::Menu).with_system(click_play_button));
     }
 }
 
