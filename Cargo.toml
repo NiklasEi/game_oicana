@@ -19,10 +19,10 @@ default = [
 ]
 
 [dependencies]
-bevy = { version = "0.6.0", default-features = false}
-bevy_kira_audio = { version = "0.8" }
-bevy_asset_loader =  { version = "0.8" }
-bevy_prototype_lyon = { version = "0.4" }
+bevy = { version = "0.7", default-features = false}
+bevy_kira_audio = { version = "0.9" }
+bevy_asset_loader =  { version = "0.10" }
+bevy_prototype_lyon = { version = "0.5" }
 rand = { version = "0.8" }
 
 [target.'cfg(target_os = "linux")'.dependencies]

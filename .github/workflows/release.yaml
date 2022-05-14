@@ -50,7 +50,7 @@ jobs:
           overwrite: true
 
   build-linux:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Get tag
@@ -109,7 +109,7 @@ jobs:
       - name: Zip release
         uses: vimtor/action-zip@v1
         with:
-          files: target/release/assets/ target/release/${{ env.GAME_EXECUTABLE_NAME }}.exe target/release/credits/
+          files: target/release/assets/ target/release/credits/ target/release/${{ env.GAME_EXECUTABLE_NAME }}.exe
           dest: ${{ env.GAME_EXECUTABLE_NAME }}_windows.zip
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
@@ -136,24 +136,24 @@ jobs:
           override: true
       - name: Install Dependencies
         run: sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
-      - name: Install cargo-make
-        run: |
-          cargo install cargo-make
+      - name: Install trunk
+        uses: jetli/trunk-action@v0.1.0
+        with:
+          version: 'latest'
       - name: Add wasm target
         run: |
           rustup target add wasm32-unknown-unknown
       - name: Build Release
         run: |
-          cargo make release
+          trunk build --release
       - name: optimize Wasm
-        uses: NiklasEi/wasm-opt@v1
+        uses: NiklasEi/wasm-opt-action@v2
         with:
-          file: build/web/target/wasm_bg.wasm
-          output: build/web/target/wasm_bg.wasm
+          file: dist/*.wasm
       - name: Zip release
         uses: vimtor/action-zip@v1
         with:
-          files: build/web/
+          files: dist/
           dest: ${{ env.GAME_EXECUTABLE_NAME }}_web.zip
       - name: Upload release
         uses: svenstaro/upload-release-action@v2

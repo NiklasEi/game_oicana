@@ -3,4 +3,4 @@ target/
 .cargo/
 .DS_Store
 
-build/web/
+dist/
