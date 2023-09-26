@@ -8,11 +8,13 @@ pub struct BulletPlugin;
 
 impl Plugin for BulletPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(
-            SystemSet::on_update(AppState::InGame)
-                .with_system(update_bullets.label(EnemyLabels::Damage)),
+        app.add_systems(
+            Update,
+            update_bullets
+                .label(EnemyLabels::Damage)
+                .run_if(in_state(AppState::InGame)),
         )
-        .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_bullets));
+        .add_systems(OnExit(AppState::InGame), break_down_bullets);
     }
 }
 
@@ -58,7 +60,7 @@ fn update_bullets(
 
 pub fn spawn_bullet(commands: &mut Commands, bullet: Bullet, translation: Vec3) -> Entity {
     commands
-        .spawn_bundle(GeometryBuilder::build_as(
+        .spawn(GeometryBuilder::build_as(
             &Circle {
                 radius: 3.,
                 center: Vec2::splat(0.),

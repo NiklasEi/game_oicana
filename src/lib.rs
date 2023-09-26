@@ -29,37 +29,35 @@ pub const PUZZLE_Z: f32 = 2.;
 pub const ENEMY_Z: f32 = 3.;
 pub const BULLET_Z: f32 = 4.;
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
 pub enum AppState {
     Restart,
     InGame,
+    #[default]
     Loading,
     Menu,
-}
-
-#[derive(Debug, Hash, PartialEq, Eq, Clone, StageLabel)]
-pub enum OicanaStage {
-    EnemyRemoval,
 }
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(Color::BLACK))
-            .add_state(AppState::Loading)
-            .add_plugin(LoadingPlugin)
-            .add_plugin(ShapePlugin)
-            .add_plugin(MenuPlugin)
-            .add_plugin(MapPlugin)
-            .add_plugin(EnemiesPlugin)
-            .add_plugin(TowersPlugin)
-            .add_plugin(BulletPlugin)
-            .add_plugin(UiPlugin)
-            .add_plugin(PuzzlePlugin)
-            .add_plugin(InternalAudioPlugin);
-        app.add_system_set(SystemSet::on_enter(AppState::Restart).with_system(switch_to_game));
+            .add_state::<AppState>()
+            .add_plugins((
+                LoadingPlugin,
+                ShapePlugin,
+                MenuPlugin,
+                MapPlugin,
+                EnemiesPlugin,
+                TowersPlugin,
+                BulletPlugin,
+                UiPlugin,
+                PuzzlePlugin,
+                InternalAudioPlugin,
+            ));
+        app.add_systems(OnEnter(AppState::Restart), switch_to_game);
     }
 }
 
-fn switch_to_game(mut state: ResMut<State<AppState>>) {
-    state.set(AppState::InGame).unwrap();
+fn switch_to_game(mut state: ResMut<NextState<AppState>>) {
+    state.set(AppState::InGame);
 }

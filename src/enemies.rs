@@ -8,7 +8,7 @@ use rand::prelude::*;
 use crate::map::{Coordinate, Map};
 use crate::puzzle::CurrentPiece;
 use crate::ui::GameState;
-use crate::{AppState, OicanaStage, ENEMY_Z};
+use crate::{AppState, ENEMY_Z};
 
 pub struct EnemiesPlugin;
 
@@ -18,44 +18,39 @@ impl Plugin for EnemiesPlugin {
             last_spawn: Instant::now(),
         })
         .add_event::<EnemyBreach>()
-        .add_stage_after(
-            CoreStage::Update,
-            OicanaStage::EnemyRemoval,
-            SystemStage::parallel(),
+        .add_systems(
+            PostUpdate,
+            remove_enemies.run_if(in_state(AppState::InGame)),
         )
-        .add_state_to_stage(OicanaStage::EnemyRemoval, AppState::Loading)
-        .add_system_set_to_stage(
-            OicanaStage::EnemyRemoval,
-            SystemSet::on_update(AppState::InGame).with_system(remove_enemies),
+        .add_systems(
+            Update,
+            (
+                update_enemy_colors
+                    .label(EnemyLabels::UpdateColor)
+                    .after(EnemyLabels::Damage),
+                spawn_enemies.before(EnemyLabels::UpdateColor),
+                update_tamable_enemies.before(EnemyLabels::UpdateColor),
+                move_enemies
+                    .label(EnemyLabels::Move)
+                    .before(EnemyLabels::Damage),
+            )
+                .run_if(in_state(AppState::InGame)),
         )
-        .add_system_set(
-            SystemSet::on_update(AppState::InGame)
-                .with_system(
-                    update_enemy_colors
-                        .label(EnemyLabels::UpdateColor)
-                        .after(EnemyLabels::Damage),
-                )
-                .with_system(spawn_enemies.before(EnemyLabels::UpdateColor))
-                .with_system(update_tamable_enemies.before(EnemyLabels::UpdateColor))
-                .with_system(
-                    move_enemies
-                        .label(EnemyLabels::Move)
-                        .before(EnemyLabels::Damage),
-                ),
-        )
-        .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_enemies));
+        .add_systems(OnExit(AppState::InGame), break_down_enemies);
     }
 }
 
-#[derive(SystemLabel, Clone, Hash, Debug, Eq, PartialEq)]
+#[derive(SystemSet, Clone, Hash, Debug, Eq, PartialEq)]
 pub enum EnemyLabels {
     UpdateColor,
     Damage,
     Move,
 }
 
+#[derive(Event)]
 pub struct EnemyBreach;
 
+#[derive(Resource)]
 struct WaveState {
     pub last_spawn: Instant,
 }
@@ -79,6 +74,7 @@ pub struct Health {
     pub value: i32,
 }
 
+#[derive(Resource)]
 pub struct Trees {
     pub coordinates: Vec<Coordinate>,
 }
@@ -187,7 +183,7 @@ fn create_enemy(
         travelled: 0.,
     };
     commands
-        .spawn_bundle(form.build_bundle(
+        .spawn(form.build_bundle(
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, ENEMY_Z)),
             enemy.get_color(health),
             Some(enemy.get_color(health)),

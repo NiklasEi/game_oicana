@@ -7,7 +7,7 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameState::default())
             .init_resource::<ButtonColors>()
-            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(init_life))
+            .add_systems(OnEnter(AppState::InGame), init_life)
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
                     .with_system(update_game_state)
@@ -17,16 +17,17 @@ impl Plugin for UiPlugin {
     }
 }
 
+#[derive(Resource)]
 pub struct ButtonColors {
-    pub normal: UiColor,
-    pub hovered: UiColor,
+    pub normal: Color,
+    pub hovered: Color,
 }
 
 impl Default for ButtonColors {
     fn default() -> Self {
         ButtonColors {
-            normal: Color::rgb(0.15, 0.15, 0.15).into(),
-            hovered: Color::rgb(0.25, 0.25, 0.25).into(),
+            normal: Color::rgb(0.15, 0.15, 0.15),
+            hovered: Color::rgb(0.25, 0.25, 0.25),
         }
     }
 }
@@ -40,6 +41,7 @@ struct HealthText;
 #[derive(Component)]
 struct ScoreText;
 
+#[derive(Resource)]
 pub struct GameState {
     pub health: usize,
     pub score: usize,
@@ -62,58 +64,48 @@ fn init_life(
     game_state: Res<GameState>,
 ) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
-    commands.spawn_bundle(UiCameraBundle::default());
     // root node
     commands
-        .spawn_bundle(NodeBundle {
+        .spawn(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                position: Rect {
-                    left: Val::Px(10.),
-                    top: Val::Px(10.),
-                    ..Default::default()
-                },
+                left: Val::Px(10.),
+                top: Val::Px(10.),
                 ..Default::default()
             },
-            color: UiColor(Color::NONE),
+            background_color: Color::NONE.into(),
             ..Default::default()
         })
         .with_children(|parent| {
             parent
-                .spawn_bundle(TextBundle {
-                    text: Text {
-                        sections: vec![TextSection {
-                            value: format!("Health: {}", game_state.health),
-                            style: TextStyle {
-                                font_size: 40.0,
-                                color: Color::rgb(0.6, 0.6, 0.6),
-                                font,
-                            },
-                        }],
-                        alignment: Default::default(),
-                    },
+                .spawn(TextBundle {
+                    text: Text::from_section(
+                        format!("Health: {}", game_state.health),
+                        TextStyle {
+                            font_size: 40.0,
+                            color: Color::rgb(0.6, 0.6, 0.6),
+                            font,
+                        },
+                    ),
                     ..Default::default()
                 })
                 .insert(HealthText);
         });
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands
-        .spawn_bundle(NodeBundle {
+        .spawn(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                position: Rect {
-                    right: Val::Px(10.),
-                    top: Val::Px(10.),
-                    ..Default::default()
-                },
+                right: Val::Px(10.),
+                top: Val::Px(10.),
                 ..Default::default()
             },
-            color: UiColor(Color::NONE),
+            background_color: Color::NONE.into(),
             ..Default::default()
         })
         .with_children(|parent| {
             parent
-                .spawn_bundle(TextBundle {
+                .spawn(TextBundle {
                     text: Text {
                         sections: vec![TextSection {
                             value: format!("Score: {}", game_state.score),
@@ -123,7 +115,7 @@ fn init_life(
                                 font,
                             },
                         }],
-                        alignment: Default::default(),
+                        ..Default::default()
                     },
                     ..Default::default()
                 })
@@ -154,31 +146,29 @@ fn retry_system(
 ) {
     if game_state.is_changed() && game_state.health < 1 {
         commands
-            .spawn_bundle(ButtonBundle {
+            .spawn(ButtonBundle {
                 style: Style {
-                    size: Size::new(Val::Px(150.0), Val::Px(65.0)),
-                    margin: Rect::all(Val::Auto),
+                    width: Val::Px(150.0),
+                    height: Val::Px(65.0),
+                    margin: UiRect::all(Val::Auto),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     ..Default::default()
                 },
-                color: button_materials.normal,
+                background_color: button_materials.normal.into(),
                 ..Default::default()
             })
             .insert(RetryButton)
             .with_children(|parent| {
-                parent.spawn_bundle(TextBundle {
-                    text: Text {
-                        sections: vec![TextSection {
-                            value: "Restart".to_string(),
-                            style: TextStyle {
-                                font_size: 40.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
-                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                            },
-                        }],
-                        alignment: Default::default(),
-                    },
+                parent.spawn(TextBundle {
+                    text: Text::from_section(
+                        "Restart".to_string(),
+                        TextStyle {
+                            font_size: 40.0,
+                            color: Color::rgb(0.9, 0.9, 0.9),
+                            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                        },
+                    ),
                     ..Default::default()
                 });
             });
@@ -188,25 +178,28 @@ fn retry_system(
 fn click_retry_button(
     mut commands: Commands,
     button_colors: Res<ButtonColors>,
-    mut state: ResMut<State<AppState>>,
+    mut state: ResMut<NextState<AppState>>,
     mut game_state: ResMut<GameState>,
-    mut interaction_query: Query<(Entity, &Interaction, &mut UiColor, &Children), With<Button>>,
+    mut interaction_query: Query<
+        (Entity, &Interaction, &mut BackgroundColor, &Children),
+        With<Button>,
+    >,
     text_query: Query<Entity, With<Text>>,
 ) {
     for (button, interaction, mut color, children) in interaction_query.iter_mut() {
         let text = text_query.get(children[0]).unwrap();
         match *interaction {
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 *game_state = GameState::default();
                 commands.entity(button).despawn();
                 commands.entity(text).despawn();
-                state.set(AppState::Restart).unwrap();
+                state.set(AppState::Restart);
             }
             Interaction::Hovered => {
-                *color = button_colors.hovered;
+                *color = button_colors.hovered.into();
             }
             Interaction::None => {
-                *color = button_colors.normal;
+                *color = button_colors.normal.into();
             }
         }
     }

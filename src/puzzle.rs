@@ -22,35 +22,36 @@ impl Plugin for PuzzlePlugin {
             })
             .add_event::<CompletePuzzle>()
             .insert_resource(Puzzles { towers: vec![] })
-            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(set_tower_puzzles))
-            .add_system_set(
-                SystemSet::on_update(AppState::InGame)
-                    .with_system(puzzle_input.label(PuzzleLabels::PlayerInput))
-                    .with_system(update_picked_up_piece)
-                    .with_system(
-                        place_puzzle_piece
-                            .label(PuzzleLabels::PlacePiece)
-                            .after(PuzzleLabels::PlayerInput),
-                    )
-                    .with_system(update_puzzle.after(PuzzleLabels::PlacePiece)),
+            .add_systems(OnEnter(AppState::InGame), set_tower_puzzles)
+            .add_systems(
+                Update,
+                (
+                    puzzle_input.label(PuzzleLabels::PlayerInput),
+                    update_picked_up_piece,
+                    place_puzzle_piece
+                        .label(PuzzleLabels::PlacePiece)
+                        .after(PuzzleLabels::PlayerInput),
+                    update_puzzle.after(PuzzleLabels::PlacePiece),
+                )
+                    .run_if(in_state(AppState::InGame)),
             )
-            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_puzzles));
+            .add_systems(OnExit(AppState::InGame), break_down_puzzles);
     }
 }
 
-#[derive(SystemLabel, Clone, Hash, Debug, Eq, PartialEq)]
+#[derive(SystemSet, Clone, Hash, Debug, Eq, PartialEq)]
 pub enum PuzzleLabels {
     PlayerInput,
     PlacePiece,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Event)]
 pub struct CompletePuzzle {
     pub coordinate: Coordinate,
     puzzle_id: usize,
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 struct PuzzleIdFactory {
     next_id: usize,
 }
@@ -69,17 +70,19 @@ pub struct PuzzleSlot {
     puzzle_id: usize,
 }
 
+#[derive(Resource)]
 pub struct CurrentPiece {
     pub entity: Option<Entity>,
     pub piece: Option<Piece>,
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct PickSource {
     pub last_cursor_pos: Vec2,
     pub cursor_offset: Vec2,
 }
 
+#[derive(Resource)]
 pub struct Puzzles {
     towers: Vec<Puzzle>,
 }
@@ -175,7 +178,7 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
             piece.color.to_color(),
             None,
         );
-        commands.spawn_bundle(bundle).insert(PuzzleSlot {
+        commands.spawn(bundle).insert(PuzzleSlot {
             piece: piece.clone(),
             filled: false,
             puzzle_id: id,
@@ -286,7 +289,7 @@ fn puzzle_input(
 
 #[allow(dead_code)]
 fn show_cursor(mut commands: Commands, pick_source: Res<PickSource>) {
-    commands.spawn_bundle(GeometryBuilder::build_as(
+    commands.spawn(GeometryBuilder::build_as(
         &Circle {
             radius: 3.,
             center: Vec2::splat(0.),
