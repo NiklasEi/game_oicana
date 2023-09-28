@@ -13,10 +13,9 @@ impl Plugin for TowersPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<TowerShot>()
             .add_systems(OnEnter(AppState::InGame), spawn_map_tower)
-            .add_system_set(
-                SystemSet::on_update(AppState::InGame)
-                    .with_system(shoot)
-                    .with_system(build_and_upgrade_towers),
+            .add_systems(
+                Update,
+                (shoot, build_and_upgrade_towers).run_if(in_state(AppState::InGame)),
             )
             .add_systems(OnExit(AppState::InGame), break_down_towers);
     }

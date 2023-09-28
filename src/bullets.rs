@@ -1,4 +1,4 @@
-use crate::enemies::{Enemy, EnemyLabels, Health, Tameable};
+use crate::enemies::{Enemy, EnemySet, Health, Tameable};
 use crate::AppState;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
@@ -11,7 +11,7 @@ impl Plugin for BulletPlugin {
         app.add_systems(
             Update,
             update_bullets
-                .label(EnemyLabels::Damage)
+                .in_set(EnemySet::Damage)
                 .run_if(in_state(AppState::InGame)),
         )
         .add_systems(OnExit(AppState::InGame), break_down_bullets);
@@ -60,13 +60,16 @@ fn update_bullets(
 
 pub fn spawn_bullet(commands: &mut Commands, bullet: Bullet, translation: Vec3) -> Entity {
     commands
-        .spawn(GeometryBuilder::build_as(
-            &Circle {
-                radius: 3.,
-                center: Vec2::splat(0.),
+        .spawn((
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&Circle {
+                    radius: 3.,
+                    center: Vec2::splat(0.),
+                }),
+                transform: Transform::from_translation(translation),
+                ..default()
             },
-            DrawMode::Fill(FillMode::color(Color::BLACK)),
-            Transform::from_translation(translation),
+            Fill::color(Color::BLACK),
         ))
         .insert(bullet)
         .id()

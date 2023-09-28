@@ -26,13 +26,11 @@ impl Plugin for EnemiesPlugin {
             Update,
             (
                 update_enemy_colors
-                    .label(EnemyLabels::UpdateColor)
-                    .after(EnemyLabels::Damage),
-                spawn_enemies.before(EnemyLabels::UpdateColor),
-                update_tamable_enemies.before(EnemyLabels::UpdateColor),
-                move_enemies
-                    .label(EnemyLabels::Move)
-                    .before(EnemyLabels::Damage),
+                    .in_set(EnemySet::UpdateColor)
+                    .after(EnemySet::Damage),
+                spawn_enemies.before(EnemySet::UpdateColor),
+                update_tamable_enemies.before(EnemySet::UpdateColor),
+                move_enemies.in_set(EnemySet::Move).before(EnemySet::Damage),
             )
                 .run_if(in_state(AppState::InGame)),
         )
@@ -41,7 +39,7 @@ impl Plugin for EnemiesPlugin {
 }
 
 #[derive(SystemSet, Clone, Hash, Debug, Eq, PartialEq)]
-pub enum EnemyLabels {
+pub enum EnemySet {
     UpdateColor,
     Damage,
     Move,
@@ -205,7 +203,7 @@ impl EnemyForm {
         transform: Transform,
         outline_color: Color,
         fill_color: Option<Color>,
-    ) -> ShapeBundle {
+    ) -> impl Bundle {
         let shape = shapes::RegularPolygon {
             sides: match self {
                 EnemyForm::Circle => 5,
@@ -216,13 +214,14 @@ impl EnemyForm {
             ..shapes::RegularPolygon::default()
         };
 
-        GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(fill_color.unwrap_or(Color::NONE)),
-                outline_mode: StrokeMode::new(outline_color, 2.0),
+        (
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&shape),
+                transform,
+                ..default()
             },
-            transform,
+            Fill::color(fill_color.unwrap_or(Color::NONE)),
+            Stroke::new(outline_color, 2.0),
         )
     }
 }
@@ -290,20 +289,14 @@ fn move_enemies(
 }
 
 fn update_enemy_colors(
-    mut damaged_enemies: Query<(&mut DrawMode, &Health, &Enemy), Changed<Health>>,
+    mut damaged_enemies: Query<(&mut Fill, &mut Stroke, &Health, &Enemy), Changed<Health>>,
 ) {
-    for (mut draw_mode, health, enemy) in damaged_enemies.iter_mut() {
+    for (mut fill, mut stroke, health, enemy) in damaged_enemies.iter_mut() {
         if health.value == enemy.colored_health {
             continue;
         }
-        if let DrawMode::Outlined {
-            ref mut fill_mode,
-            ref mut outline_mode,
-        } = *draw_mode
-        {
-            fill_mode.color = enemy.get_color(health.value);
-            outline_mode.color = enemy.get_color(health.value);
-        }
+        fill.color = enemy.get_color(health.value);
+        stroke.color = enemy.get_color(health.value);
     }
 }
 

@@ -26,23 +26,14 @@ impl Plugin for PuzzlePlugin {
             .add_systems(
                 Update,
                 (
-                    puzzle_input.label(PuzzleLabels::PlayerInput),
                     update_picked_up_piece,
-                    place_puzzle_piece
-                        .label(PuzzleLabels::PlacePiece)
-                        .after(PuzzleLabels::PlayerInput),
-                    update_puzzle.after(PuzzleLabels::PlacePiece),
+                    show_cursor,
+                    (puzzle_input, place_puzzle_piece, update_puzzle).chain(),
                 )
                     .run_if(in_state(AppState::InGame)),
             )
             .add_systems(OnExit(AppState::InGame), break_down_puzzles);
     }
-}
-
-#[derive(SystemSet, Clone, Hash, Debug, Eq, PartialEq)]
-pub enum PuzzleLabels {
-    PlayerInput,
-    PlacePiece,
 }
 
 #[derive(Debug, Event)]
@@ -173,7 +164,7 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
             },
         };
 
-        let bundle: ShapeBundle = piece.form.build_bundle(
+        let bundle = piece.form.build_bundle(
             Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, PUZZLE_Z)),
             piece.color.to_color(),
             None,
@@ -190,10 +181,10 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
 fn place_puzzle_piece(
     mut commands: Commands,
     mut puzzles: ResMut<Puzzles>,
-    mut query: Query<(Entity, &mut DrawMode, &mut PuzzleSlot), With<ToFill>>,
+    mut query: Query<(Entity, &mut Fill, &mut PuzzleSlot), With<ToFill>>,
     mut complete_puzzle: EventWriter<CompletePuzzle>,
 ) {
-    for (entity, mut draw_mode, mut slot) in query.iter_mut() {
+    for (entity, mut fill, mut slot) in query.iter_mut() {
         let puzzle = puzzles
             .towers
             .iter_mut()
@@ -209,13 +200,7 @@ fn place_puzzle_piece(
         }
 
         commands.entity(entity).remove::<ToFill>();
-        if let DrawMode::Outlined {
-            ref mut fill_mode,
-            outline_mode: _,
-        } = *draw_mode
-        {
-            fill_mode.color = slot.piece.color.to_color();
-        }
+        fill.color = slot.piece.color.to_color();
         slot.filled = true;
     }
 }
@@ -289,17 +274,20 @@ fn puzzle_input(
 
 #[allow(dead_code)]
 fn show_cursor(mut commands: Commands, pick_source: Res<PickSource>) {
-    commands.spawn(GeometryBuilder::build_as(
-        &Circle {
-            radius: 3.,
-            center: Vec2::splat(0.),
+    commands.spawn((
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&Circle {
+                radius: 3.,
+                center: Vec2::splat(0.),
+            }),
+            transform: Transform::from_translation(Vec3::new(
+                pick_source.last_cursor_pos.x,
+                pick_source.last_cursor_pos.y,
+                10.,
+            )),
+            ..default()
         },
-        DrawMode::Fill(FillMode::color(Color::BLACK)),
-        Transform::from_translation(Vec3::new(
-            pick_source.last_cursor_pos.x,
-            pick_source.last_cursor_pos.y,
-            10.,
-        )),
+        Fill::color(Color::BLACK),
     ));
 }
 

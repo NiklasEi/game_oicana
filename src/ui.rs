@@ -8,11 +8,10 @@ impl Plugin for UiPlugin {
         app.insert_resource(GameState::default())
             .init_resource::<ButtonColors>()
             .add_systems(OnEnter(AppState::InGame), init_life)
-            .add_system_set(
-                SystemSet::on_update(AppState::InGame)
-                    .with_system(update_game_state)
-                    .with_system(retry_system)
-                    .with_system(click_retry_button),
+            .add_systems(
+                Update,
+                (update_game_state, retry_system, click_retry_button)
+                    .run_if(in_state(AppState::InGame)),
             );
     }
 }
