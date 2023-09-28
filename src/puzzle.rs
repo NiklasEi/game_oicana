@@ -2,6 +2,7 @@ use crate::enemies::{Enemy, EnemyColor, EnemyForm, Tameable};
 use crate::map::{Coordinate, Map, Tile};
 use crate::{AppState, ENEMY_Z, PUZZLE_Z};
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes::Circle;
@@ -27,7 +28,6 @@ impl Plugin for PuzzlePlugin {
                 Update,
                 (
                     update_picked_up_piece,
-                    show_cursor,
                     (puzzle_input, place_puzzle_piece, update_puzzle).chain(),
                 )
                     .run_if(in_state(AppState::InGame)),
@@ -207,16 +207,22 @@ fn place_puzzle_piece(
 
 fn puzzle_input(
     mut commands: Commands,
-    mut cursor_events: EventReader<CursorMoved>,
     mouse_button_inputs: Res<Input<MouseButton>>,
     mut tamable_query: Query<(Entity, &mut Transform, &Enemy), With<Tameable>>,
     mut puzzle_query: Query<(Entity, &Transform, &mut PuzzleSlot), Without<Enemy>>,
+    window: Query<&Window, With<PrimaryWindow>>,
+    camera: Query<(&Camera, &GlobalTransform)>,
     mut currently_picked: ResMut<CurrentPiece>,
     mut pick_source: ResMut<PickSource>,
 ) {
-    let cursor_position = cursor_events.iter().last();
-    let cursor_position = if let Some(cursor_position) = cursor_position {
-        cursor_position.position - pick_source.cursor_offset
+    let (camera, camera_transform) = camera.single();
+    let cursor_position = if let Some(world_position) = window
+        .single()
+        .cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+        .map(|ray| ray.origin.truncate())
+    {
+        world_position
     } else {
         pick_source.last_cursor_pos
     };
