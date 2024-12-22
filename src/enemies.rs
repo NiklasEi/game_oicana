@@ -8,7 +8,7 @@ use rand::prelude::*;
 use crate::map::{Coordinate, Map};
 use crate::puzzle::CurrentPiece;
 use crate::ui::GameState;
-use crate::{AppState, OicanaStage, ENEMY_Z};
+use crate::{AppState, ENEMY_Z};
 
 pub struct EnemiesPlugin;
 
@@ -18,44 +18,37 @@ impl Plugin for EnemiesPlugin {
             last_spawn: Instant::now(),
         })
         .add_event::<EnemyBreach>()
-        .add_stage_after(
-            CoreStage::Update,
-            OicanaStage::EnemyRemoval,
-            SystemStage::parallel(),
+        .add_systems(
+            PostUpdate,
+            remove_enemies.run_if(in_state(AppState::InGame)),
         )
-        .add_state_to_stage(OicanaStage::EnemyRemoval, AppState::Loading)
-        .add_system_set_to_stage(
-            OicanaStage::EnemyRemoval,
-            SystemSet::on_update(AppState::InGame).with_system(remove_enemies),
+        .add_systems(
+            Update,
+            (
+                update_enemy_colors
+                    .in_set(EnemySet::UpdateColor)
+                    .after(EnemySet::Damage),
+                spawn_enemies.before(EnemySet::UpdateColor),
+                update_tamable_enemies.before(EnemySet::UpdateColor),
+                move_enemies.in_set(EnemySet::Move).before(EnemySet::Damage),
+            )
+                .run_if(in_state(AppState::InGame)),
         )
-        .add_system_set(
-            SystemSet::on_update(AppState::InGame)
-                .with_system(
-                    update_enemy_colors
-                        .label(EnemyLabels::UpdateColor)
-                        .after(EnemyLabels::Damage),
-                )
-                .with_system(spawn_enemies.before(EnemyLabels::UpdateColor))
-                .with_system(update_tamable_enemies.before(EnemyLabels::UpdateColor))
-                .with_system(
-                    move_enemies
-                        .label(EnemyLabels::Move)
-                        .before(EnemyLabels::Damage),
-                ),
-        )
-        .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_enemies));
+        .add_systems(OnExit(AppState::InGame), break_down_enemies);
     }
 }
 
-#[derive(SystemLabel, Clone, Hash, Debug, Eq, PartialEq)]
-pub enum EnemyLabels {
+#[derive(SystemSet, Clone, Hash, Debug, Eq, PartialEq)]
+pub enum EnemySet {
     UpdateColor,
     Damage,
     Move,
 }
 
+#[derive(Event)]
 pub struct EnemyBreach;
 
+#[derive(Resource)]
 struct WaveState {
     pub last_spawn: Instant,
 }
@@ -79,6 +72,7 @@ pub struct Health {
     pub value: i32,
 }
 
+#[derive(Resource)]
 pub struct Trees {
     pub coordinates: Vec<Coordinate>,
 }
@@ -187,7 +181,7 @@ fn create_enemy(
         travelled: 0.,
     };
     commands
-        .spawn_bundle(form.build_bundle(
+        .spawn(form.build_bundle(
             Transform::from_translation(Vec3::new(map.spawn.x, map.spawn.y, ENEMY_Z)),
             enemy.get_color(health),
             Some(enemy.get_color(health)),
@@ -209,7 +203,7 @@ impl EnemyForm {
         transform: Transform,
         outline_color: Color,
         fill_color: Option<Color>,
-    ) -> ShapeBundle {
+    ) -> impl Bundle {
         let shape = shapes::RegularPolygon {
             sides: match self {
                 EnemyForm::Circle => 5,
@@ -220,13 +214,14 @@ impl EnemyForm {
             ..shapes::RegularPolygon::default()
         };
 
-        GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(fill_color.unwrap_or(Color::NONE)),
-                outline_mode: StrokeMode::new(outline_color, 2.0),
+        (
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&shape),
+                transform,
+                ..default()
             },
-            transform,
+            Fill::color(fill_color.unwrap_or(Color::NONE)),
+            Stroke::new(outline_color, 2.0),
         )
     }
 }
@@ -294,20 +289,14 @@ fn move_enemies(
 }
 
 fn update_enemy_colors(
-    mut damaged_enemies: Query<(&mut DrawMode, &Health, &Enemy), Changed<Health>>,
+    mut damaged_enemies: Query<(&mut Fill, &mut Stroke, &Health, &Enemy), Changed<Health>>,
 ) {
-    for (mut draw_mode, health, enemy) in damaged_enemies.iter_mut() {
+    for (mut fill, mut stroke, health, enemy) in damaged_enemies.iter_mut() {
         if health.value == enemy.colored_health {
             continue;
         }
-        if let DrawMode::Outlined {
-            ref mut fill_mode,
-            ref mut outline_mode,
-        } = *draw_mode
-        {
-            fill_mode.color = enemy.get_color(health.value);
-            outline_mode.color = enemy.get_color(health.value);
-        }
+        fill.color = enemy.get_color(health.value);
+        stroke.color = enemy.get_color(health.value);
     }
 }
 

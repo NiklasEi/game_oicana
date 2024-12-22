@@ -12,16 +12,16 @@ pub struct TowersPlugin;
 impl Plugin for TowersPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<TowerShot>()
-            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(spawn_map_tower))
-            .add_system_set(
-                SystemSet::on_update(AppState::InGame)
-                    .with_system(shoot)
-                    .with_system(build_and_upgrade_towers),
+            .add_systems(OnEnter(AppState::InGame), spawn_map_tower)
+            .add_systems(
+                Update,
+                (shoot, build_and_upgrade_towers).run_if(in_state(AppState::InGame)),
             )
-            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_towers));
+            .add_systems(OnExit(AppState::InGame), break_down_towers);
     }
 }
 
+#[derive(Event)]
 pub struct TowerShot;
 
 #[derive(Component)]
@@ -48,7 +48,7 @@ fn spawn_map_tower(mut commands: Commands, map: Res<Map>) {
     }
 
     for coordinate in tower_positions {
-        commands.spawn_bundle(TowerBundle::new(coordinate));
+        commands.spawn(TowerBundle::new(coordinate));
     }
 }
 
@@ -117,7 +117,7 @@ fn build_and_upgrade_towers(
 
             *tower_cooldown = TowerCooldown(Timer::from_seconds(
                 if tower.level == 2 { 0.2 } else { 0.1 },
-                true,
+                TimerMode::Repeating,
             ));
         } else {
             for (transform, mut image) in map_tiles_query.iter_mut() {
@@ -127,7 +127,7 @@ fn build_and_upgrade_towers(
                     *image = texture_assets.tower.clone()
                 }
             }
-            commands.spawn_bundle(TowerBundle::new(coordinate));
+            commands.spawn(TowerBundle::new(coordinate));
         }
     }
 }
@@ -151,7 +151,7 @@ impl DerefMut for TowerCooldown {
 
 impl Default for TowerCooldown {
     fn default() -> Self {
-        TowerCooldown(Timer::from_seconds(0.3, true))
+        TowerCooldown(Timer::from_seconds(0.3, TimerMode::Repeating))
     }
 }
 

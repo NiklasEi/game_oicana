@@ -10,11 +10,7 @@ impl Plugin for MapPlugin {
         let map = Map::load_map();
         app.insert_resource(map.gather_trees())
             .insert_resource(map)
-            .add_system_set(
-                SystemSet::on_enter(AppState::Menu)
-                    .with_system(render_map)
-                    .with_system(setup_camera),
-            );
+            .add_systems(OnEnter(AppState::Menu), (render_map, setup_camera));
     }
 }
 
@@ -47,7 +43,7 @@ impl Coordinate {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Resource)]
 pub struct Map {
     pub height: usize,
     pub width: usize,
@@ -193,10 +189,10 @@ impl Map {
 }
 
 fn setup_camera(mut commands: Commands, map: Res<Map>) {
-    let mut camera_bundle = OrthographicCameraBundle::new_2d();
+    let mut camera_bundle = Camera2dBundle::default();
     camera_bundle.transform.translation.x = (map.width as f32 / 2. - 0.5) * map.tile_size;
     camera_bundle.transform.translation.y = (map.height as f32 / 2. - 0.5) * map.tile_size;
-    commands.spawn_bundle(camera_bundle);
+    commands.spawn(camera_bundle);
 }
 
 fn render_map(mut commands: Commands, map: Res<Map>, texture_assets: Res<TextureAssets>) {
@@ -204,7 +200,7 @@ fn render_map(mut commands: Commands, map: Res<Map>, texture_assets: Res<Texture
         for column in 0..map.width {
             let tile = &map.tiles[row][column];
             commands
-                .spawn_bundle(SpriteBundle {
+                .spawn(SpriteBundle {
                     texture: texture_assets.get_handle_for_tile(tile).clone(),
                     transform: Transform::from_translation(Vec3::new(
                         column as f32 * map.tile_size,

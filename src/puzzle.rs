@@ -2,6 +2,7 @@ use crate::enemies::{Enemy, EnemyColor, EnemyForm, Tameable};
 use crate::map::{Coordinate, Map, Tile};
 use crate::{AppState, ENEMY_Z, PUZZLE_Z};
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use bevy_prototype_lyon::shapes::Circle;
@@ -22,35 +23,26 @@ impl Plugin for PuzzlePlugin {
             })
             .add_event::<CompletePuzzle>()
             .insert_resource(Puzzles { towers: vec![] })
-            .add_system_set(SystemSet::on_enter(AppState::InGame).with_system(set_tower_puzzles))
-            .add_system_set(
-                SystemSet::on_update(AppState::InGame)
-                    .with_system(puzzle_input.label(PuzzleLabels::PlayerInput))
-                    .with_system(update_picked_up_piece)
-                    .with_system(
-                        place_puzzle_piece
-                            .label(PuzzleLabels::PlacePiece)
-                            .after(PuzzleLabels::PlayerInput),
-                    )
-                    .with_system(update_puzzle.after(PuzzleLabels::PlacePiece)),
+            .add_systems(OnEnter(AppState::InGame), set_tower_puzzles)
+            .add_systems(
+                Update,
+                (
+                    update_picked_up_piece,
+                    (puzzle_input, place_puzzle_piece, update_puzzle).chain(),
+                )
+                    .run_if(in_state(AppState::InGame)),
             )
-            .add_system_set(SystemSet::on_exit(AppState::InGame).with_system(break_down_puzzles));
+            .add_systems(OnExit(AppState::InGame), break_down_puzzles);
     }
 }
 
-#[derive(SystemLabel, Clone, Hash, Debug, Eq, PartialEq)]
-pub enum PuzzleLabels {
-    PlayerInput,
-    PlacePiece,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Event)]
 pub struct CompletePuzzle {
     pub coordinate: Coordinate,
     puzzle_id: usize,
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 struct PuzzleIdFactory {
     next_id: usize,
 }
@@ -69,17 +61,19 @@ pub struct PuzzleSlot {
     puzzle_id: usize,
 }
 
+#[derive(Resource)]
 pub struct CurrentPiece {
     pub entity: Option<Entity>,
     pub piece: Option<Piece>,
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct PickSource {
     pub last_cursor_pos: Vec2,
     pub cursor_offset: Vec2,
 }
 
+#[derive(Resource)]
 pub struct Puzzles {
     towers: Vec<Puzzle>,
 }
@@ -170,12 +164,12 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
             },
         };
 
-        let bundle: ShapeBundle = piece.form.build_bundle(
+        let bundle = piece.form.build_bundle(
             Transform::from_translation(Vec3::new(coordinate.x, coordinate.y, PUZZLE_Z)),
             piece.color.to_color(),
             None,
         );
-        commands.spawn_bundle(bundle).insert(PuzzleSlot {
+        commands.spawn(bundle).insert(PuzzleSlot {
             piece: piece.clone(),
             filled: false,
             puzzle_id: id,
@@ -187,10 +181,10 @@ fn spawn_puzzle(id: usize, coordinate: Coordinate, commands: &mut Commands) -> P
 fn place_puzzle_piece(
     mut commands: Commands,
     mut puzzles: ResMut<Puzzles>,
-    mut query: Query<(Entity, &mut DrawMode, &mut PuzzleSlot), With<ToFill>>,
+    mut query: Query<(Entity, &mut Fill, &mut PuzzleSlot), With<ToFill>>,
     mut complete_puzzle: EventWriter<CompletePuzzle>,
 ) {
-    for (entity, mut draw_mode, mut slot) in query.iter_mut() {
+    for (entity, mut fill, mut slot) in query.iter_mut() {
         let puzzle = puzzles
             .towers
             .iter_mut()
@@ -206,29 +200,29 @@ fn place_puzzle_piece(
         }
 
         commands.entity(entity).remove::<ToFill>();
-        if let DrawMode::Outlined {
-            ref mut fill_mode,
-            outline_mode: _,
-        } = *draw_mode
-        {
-            fill_mode.color = slot.piece.color.to_color();
-        }
+        fill.color = slot.piece.color.to_color();
         slot.filled = true;
     }
 }
 
 fn puzzle_input(
     mut commands: Commands,
-    mut cursor_events: EventReader<CursorMoved>,
     mouse_button_inputs: Res<Input<MouseButton>>,
     mut tamable_query: Query<(Entity, &mut Transform, &Enemy), With<Tameable>>,
     mut puzzle_query: Query<(Entity, &Transform, &mut PuzzleSlot), Without<Enemy>>,
+    window: Query<&Window, With<PrimaryWindow>>,
+    camera: Query<(&Camera, &GlobalTransform)>,
     mut currently_picked: ResMut<CurrentPiece>,
     mut pick_source: ResMut<PickSource>,
 ) {
-    let cursor_position = cursor_events.iter().last();
-    let cursor_position = if let Some(cursor_position) = cursor_position {
-        cursor_position.position - pick_source.cursor_offset
+    let (camera, camera_transform) = camera.single();
+    let cursor_position = if let Some(world_position) = window
+        .single()
+        .cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+        .map(|ray| ray.origin.truncate())
+    {
+        world_position
     } else {
         pick_source.last_cursor_pos
     };
@@ -286,17 +280,20 @@ fn puzzle_input(
 
 #[allow(dead_code)]
 fn show_cursor(mut commands: Commands, pick_source: Res<PickSource>) {
-    commands.spawn_bundle(GeometryBuilder::build_as(
-        &Circle {
-            radius: 3.,
-            center: Vec2::splat(0.),
+    commands.spawn((
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&Circle {
+                radius: 3.,
+                center: Vec2::splat(0.),
+            }),
+            transform: Transform::from_translation(Vec3::new(
+                pick_source.last_cursor_pos.x,
+                pick_source.last_cursor_pos.y,
+                10.,
+            )),
+            ..default()
         },
-        DrawMode::Fill(FillMode::color(Color::BLACK)),
-        Transform::from_translation(Vec3::new(
-            pick_source.last_cursor_pos.x,
-            pick_source.last_cursor_pos.y,
-            10.,
-        )),
+        Fill::color(Color::BLACK),
     ));
 }
 
