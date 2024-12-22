@@ -12,6 +12,10 @@ All enemies are geometrical forms. In the beginning they are all grey, but when 
 
 As in every TD game, you can lose by letting too many enemies through to your base.
 
+## Development
+
+Run the game locally with `cargo run` or in the browser with `trunk serve`.
+
 ## Credits
 
 See [CREDITS.md](credits/CREDITS.md)
